@@ -39,10 +39,17 @@ class preprocess:
                             video.set(1, 0)
                             ret, prev = video.read()
                             gray =  cv2.cvtColor(prev, cv2.COLOR_BGR2GRAY)
-                            dset = hf.create_dataset(path + '+' + str(0) + "+gray", data=gray)
-                            dset = hf.create_dataset(path + '+' + str(0) + "+rgb", data=prev)
+                            # dset = hf.create_dataset(path + '+' + str(0) + "+gray", data=gray)
+                            # dset = hf.create_dataset(path + '+' + str(0) + "+rgb", data=prev)
 
                             pbar_frame = tqdm(total=length, leave=False, desc='Frame')
+                            video_matrix = np.zeros(shape=(length, 368, 368, 8), dtype=np.uint8)
+                            frame_matrix = np.zeros(shape=(1, 368, 368, 8), dtype=float)
+                            res_gray = cv2.resize(gray, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
+                            frame_matrix[0, :, :, 7] = res_gray
+                            frame_matrix = 255 * frame_matrix  # Now scale by 255
+                            frame_matrix = frame_matrix.astype(np.uint8)
+                            video_matrix[0, :, :, :] = frame_matrix
 
                             for frame in range(1, length):
                                 try:
@@ -52,26 +59,45 @@ class preprocess:
                                     video.set(1, frame)
                                     ret, im = video.read()
                                     gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-                                    gray_prev = hf[path + '+' + str(frame-1) + '+gray']
-                                    gray_prev = np.array(gray_prev)
-                                    flow = cv2.calcOpticalFlowFarneback(gray_prev, gray, flow=None,
+                                    # gray_prev = hf[path + '+' + str(frame-1) + '+gray']
+                                    # gray_prev = np.array(gray_prev)
+                                    res_gray = cv2.resize(gray, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
+                                    gray_prev = video_matrix[frame-1, :, :, 7]
+                                    gray_prev_float = gray_prev.astype(np.uint8)
+                                    flow = cv2.calcOpticalFlowFarneback(gray_prev_float, res_gray, flow=None,
                                                                     pyr_scale=0.5, levels=1,
                                                                     winsize=15, iterations=3,
                                                                     poly_n=5, poly_sigma=1.1, flags=0)
                                     norm_flow = flow
                                     norm_flow = cv2.normalize(flow, norm_flow, 0, 255, cv2.NORM_MINMAX)
                                     res_im = cv2.resize(im, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
+                                    res_norm_flow = cv2.resize(norm_flow, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
                                     pafMat, heatMat = self.openpose.compute_pose_frame(res_im)
-                                    dset = hf.create_dataset(base + "+rgb", data=im)
-                                    dset = hf.create_dataset(base + "+gray", data=gray)
-                                    dset = hf.create_dataset(base + "+of", data=norm_flow)
-                                    dset = hf.create_dataset(base + "+pafmat", data=pafMat)
-                                    dset = hf.create_dataset(base + "+heatMat", data=heatMat)
+                                    res_pafMat = cv2.resize(pafMat, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
+                                    res_heatMat = cv2.resize(heatMat, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
+                                    frame_matrix = np.zeros(shape=(1, 368, 368, 8), dtype=float)
+
+                                    frame_matrix[0, :, :, :3] = res_im
+                                    frame_matrix[0, :, :, 7] = res_gray
+                                    frame_matrix[0, :, :, 5:7] = res_norm_flow
+                                    frame_matrix[0, :, :, 3] = res_pafMat
+                                    frame_matrix[0, :, :, 4] = res_heatMat
+                                    frame_matrix = 255 * frame_matrix  # Now scale by 255
+                                    frame_matrix = frame_matrix.astype(np.uint8)
+
+                                    video_matrix[frame, :, :, :] = frame_matrix
+
+                                    # dset = hf.create_dataset(base + "+rgb", data=im)
+                                    # dset = hf.create_dataset(base + "+gray", data=gray)
+                                    # dset = hf.create_dataset(base + "+of", data=norm_flow)
+                                    # dset = hf.create_dataset(base + "+pafmat", data=pafMat)
+                                    # dset = hf.create_dataset(base + "+heatMat", data=heatMat)
                                 except Exception as e:
                                     print(e)
                                     print(path + '    frame:' + str(frame))
                                     pass
                                 pbar_frame.update(1)
+                            dset = hf.create_dataset(base, data=video_matrix)
                             pbar_frame.refresh()
                             pbar_frame.close()
 
