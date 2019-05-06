@@ -21,7 +21,7 @@ import time
 class preprocess:
     def __init__(self):
         with tf.Session() as sess:
-            with h5py.File("Dataset/preprocessed/dataset.h5", "w") as hf:
+            with h5py.File("dataset/preprocessed/dataset.h5", "w") as hf:
                 self.sess = sess
                 self.openpose = OpenPose(self.sess)
                 self.openpose.load_openpose_weights()
