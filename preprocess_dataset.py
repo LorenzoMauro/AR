@@ -31,18 +31,13 @@ class preprocess:
                 for root, dirs, files in os.walk(config.ocado_path):
                     for fl in files:
                         if fl in dataset:
-
-                            dict_video = {}
                             path = root + '/' + fl
                             video = cv2.VideoCapture(path)
                             video.set(cv2.CAP_PROP_POS_AVI_RATIO, 1)
                             length = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-
                             #Zero Frame
                             video.set(1, 0)
                             ret, prev = video.read()
-                            print(ret)
-                            print(type(prev))
                             gray =  cv2.cvtColor(prev, cv2.COLOR_BGR2GRAY)
                             dset = hf.create_dataset(path + '+' + str(0) + "+gray", data=gray)
                             dset = hf.create_dataset(path + '+' + str(0) + "+rgb", data=prev)
@@ -50,7 +45,6 @@ class preprocess:
                             pbar_frame = tqdm(total=length, leave=False, desc='Frame')
 
                             for frame in range(1, length):
-                                
                                 try:
                                     base = path + '+' + str(frame)
                                     video.set(1, frame)
