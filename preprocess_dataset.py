@@ -21,7 +21,8 @@ import time
 class preprocess:
     def __init__(self):
         with tf.Session() as sess:
-            with h5py.File("dataset/preprocessed/dataset.h5", "w") as hf:
+            with h5py.File("dataset/preprocessed/dataset.h5", "a") as hf:
+                print(hf.keys())
                 self.sess = sess
                 self.openpose = OpenPose(self.sess)
                 self.openpose.load_openpose_weights()
@@ -30,12 +31,11 @@ class preprocess:
                 pbar_file = tqdm(total=len(dataset), leave=False, desc='Files')
                 for root, dirs, files in os.walk(config.ocado_path):
                     for fl in files:
-                        if fl in dataset:
-                            path = root + '/' + fl
+                        path = root + '/' + fl
+                        if fl in dataset and path not in hf.keys():
                             video = cv2.VideoCapture(path)
                             video.set(cv2.CAP_PROP_POS_AVI_RATIO, 1)
                             length = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-                            #Zero Frame
                             video.set(1, 0)
                             ret, prev = video.read()
                             gray =  cv2.cvtColor(prev, cv2.COLOR_BGR2GRAY)
@@ -53,7 +53,6 @@ class preprocess:
 
                             for frame in range(1, length):
                                 try:
-                                    base = path + '+' + str(frame)
                                     video.set(1, frame)
                                     ret, im = video.read()
                                     video.set(1, frame)
@@ -97,7 +96,7 @@ class preprocess:
                                     print(path + '    frame:' + str(frame))
                                     pass
                                 pbar_frame.update(1)
-                            dset = hf.create_dataset(base, data=video_matrix)
+                            dset = hf.create_dataset(path, data=video_matrix)
                             pbar_frame.refresh()
                             pbar_frame.close()
 
