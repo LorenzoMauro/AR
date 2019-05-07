@@ -16,17 +16,11 @@ pp = pprint.PrettyPrinter(indent=4)
 
 class Dataset:
     def __init__(self):
-        if (os.path.isfile('dataset/frame_now.pkl') and
-                os.path.isfile('dataset/frame_next.pkl') and
+        if (os.path.isfile('dataset/frame_label.pkl') and
                 os.path.isfile('dataset/train_collection.pkl') and
-                # os.path.isfile('dataset/train_tree_list.pkl') and
-                # os.path.isfile('dataset/train_couple_count.pkl') and
                 os.path.isfile('dataset/test_collection.pkl') and
-                # os.path.isfile('dataset/test_tree_list.pkl') and
-                # os.path.isfile('dataset/test_couple_count.pkl') and
                 os.path.isfile('dataset/label_to_id.pkl') and
                 os.path.isfile('dataset/id_to_label.pkl') and
-                os.path.isfile('dataset/max_history_val.pkl') and
                 not config.rebuild):
 
             self.label_to_id = self.load('label_to_id')
@@ -35,22 +29,13 @@ class Dataset:
             self.activity_to_id = self.load('activity_to_id')
             self.id_to_activity = self.load('id_to_activity')
             self.number_of_activities = len(self.id_to_activity)
-            self.frame_now = self.load('frame_now')
-            self.frame_next = self.load('frame_next')
+            self.frame_now = self.load('frame_label')
             self.train_collection = self.load('train_collection')
-            # self.train_tree_list = self.load('train_tree_list')
-            # self.train_couple_count = self.load('train_couple_count')
             self.test_collection = self.load('test_collection')
-            # self.test_tree_list = self.load('test_tree_list')
-            # self.test_couple_count = self.load('test_couple_count')
-            self.max_history = self.load('max_history_val')
         else:
             self.generate_dataset()
 
         pp.pprint(self.id_to_label)
-        pp.pprint(self.id_to_activity)
-        pp.pprint(self.train_collection)
-
 
     def generate_dataset(self):
         self.whole_dataset = Annotation().Dataset
@@ -74,7 +59,6 @@ class Dataset:
             self.collection, self.multi_list, self.couple_count, self.max_history= self.new_collection(self.whole_dataset)
             self.train_collection, self.test_collection = self.split_dataset_second(self.collection)
 
-        self.save(self.max_history, 'max_history_val')
         self.save(self.frame_label, 'frame_label')
         self.save(self.train_collection, 'train_collection')
         self.save(self.test_collection, 'test_collection')
@@ -124,7 +108,9 @@ class Dataset:
         id_to_label = {}
         label_to_id['sil'] = 0
         id_to_label[0] = 'sil'
-        i = 1
+        label_to_id['go'] = 1
+        id_to_label[1] = 'go'
+        i = 2
         for video_name in self.whole_dataset:
             for segment in self.whole_dataset[video_name]:
                 label = segment['label'].lower()
@@ -315,7 +301,6 @@ class Dataset:
             multi_list = graph_list
         transition = np.zeros(shape=(len(self.id_to_label), len(self.id_to_label)), dtype=float)
         total = 0
-        pp.pprint(self.id_to_label)
         for x in couple_count:
             now = int(x.split('-')[0])
             next = int(x.split('-')[1])

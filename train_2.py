@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import pprint
-from batch_generator import IO_manager
+from batch_generator_test import IO_manager
 from network_seq import activity_network
 from network_seq import Training
 from network_seq import Input_manager
@@ -13,9 +13,9 @@ import config
 from tensorflow.python.client import device_lib
 
 pp = pprint.PrettyPrinter(indent=4)
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = config.TF_CPP_MIN_LOG_LEVEL
 tf_config = tf.ConfigProto(inter_op_parallelism_threads=config.inter_op_parallelism_threads, allow_soft_placement = True)
 tf_config.gpu_options.allow_growth = config.allow_growth
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
 def calculate_confusion_matrix(confusion, batch, y_pred, step, folder_name, id_to_label):
     if not os.path.exists('./results/confusion_matrix/' + folder_name + '/'):
@@ -68,14 +68,14 @@ def train():
         available_gpus = get_available_gpus()
         j=0
         Net_collection = {}
-        Input_net = Input_manager(len(available_gpus))
+        Input_net = Input_manager(len(available_gpus), IO_tool)
         for device in available_gpus:
             with tf.device(device.name):
                 print(device.name)
                 with tf.variable_scope('Network') as scope:
                     if j>0:
                         scope.reuse_variables()
-                    Net_collection['Network_' + str(j)] = activity_network(number_of_classes, number_of_activities, IO_tool.dataset.max_history, Input_net, j)
+                    Net_collection['Network_' + str(j)] = activity_network(number_of_classes, number_of_activities, Input_net, j, IO_tool)
                     j = j+1
         # with tf.device(available_gpus[-1].name):
         Train_Net = Training(Net_collection)

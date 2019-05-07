@@ -1,0 +1,7 @@
+/openpose
+/dataset/Video/Ocado
+/logdir
+/debug
+/_pycache_
+/sports1m_finetuning_ucf101.model
+/dataset/preprocessed
