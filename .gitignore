@@ -2,6 +2,7 @@
 /dataset/Video/Ocado
 /logdir
 /debug
-/_pycache_
+/__pycache__
 /sports1m_finetuning_ucf101.model
 /dataset/preprocessed
+/.vscode/settings.json
