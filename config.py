@@ -9,17 +9,17 @@ Batch_size = 20
 frames_per_step = 6
 window_size = 1
 load_previous_weigth = False
-load_pretrained_weigth = True
+load_pretrained_weigth = False
 model_filename = './checkpoint/Net_weigths.model'
 tot_steps = 1000000
-processes = 20
+processes = 12
 tasks = 10
 reuse_HSM = True
 reuse_output_collection = False
 Action = True
 tree_or_graph = "graph"
 balance_key = 'all'
-ordered_dataset = False
+is_ordered = False
 
 #[Network]
 learning_rate = 0.01

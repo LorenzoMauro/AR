@@ -19,6 +19,7 @@ class Dataset:
         if (os.path.isfile('dataset/frame_label.pkl') and
                 os.path.isfile('dataset/train_collection.pkl') and
                 os.path.isfile('dataset/test_collection.pkl') and
+                os.path.isfile('dataset/ordered_collection.pkl') and
                 os.path.isfile('dataset/label_to_id.pkl') and
                 os.path.isfile('dataset/id_to_label.pkl') and
                 not config.rebuild):
@@ -32,6 +33,7 @@ class Dataset:
             self.frame_now = self.load('frame_label')
             self.train_collection = self.load('train_collection')
             self.test_collection = self.load('test_collection')
+            self.ordered_collection = self.load('ordered_collection')
         else:
             self.generate_dataset()
 
@@ -51,17 +53,18 @@ class Dataset:
         self.frame_label = self.compute_frame_label(self.whole_dataset, next=False)
         if not config.split_seconds:
             self.Train_dataset, self.Val_dataset = self.split_dataset()
-            self.train_collection, self.train_multi_list, self.train_couple_count, self.max_history= self.new_collection(self.Train_dataset)
-            self.test_collection, self.test_multi_list, self.test_couple_count, self.max_history_val = self.new_collection(self.Val_dataset)
+            self.train_collection,self.ordered_collection, self.train_multi_list, self.train_couple_count, self.max_history= self.new_collection(self.Train_dataset)
+            self.test_collection,self.ordered_collection, self.test_multi_list, self.test_couple_count, self.max_history_val = self.new_collection(self.Val_dataset)
             if self.max_history_val > self.max_history:
                 self.max_history = self.max_history_val
         else:
-            self.collection, self.multi_list, self.couple_count, self.max_history= self.new_collection(self.whole_dataset)
+            self.collection, self.ordered_collection, self.multi_list, self.couple_count, self.max_history= self.new_collection(self.whole_dataset)
             self.train_collection, self.test_collection = self.split_dataset_second(self.collection)
 
         self.save(self.frame_label, 'frame_label')
         self.save(self.train_collection, 'train_collection')
         self.save(self.test_collection, 'test_collection')
+        self.save(self.ordered_collection, 'ordered_collection')
 
     def split_dataset(self):
         dataset_train = self.whole_dataset
@@ -189,6 +192,7 @@ class Dataset:
 
     def new_collection(self, dataset):
         collection = {}
+        ordered_collection = {}
         couple_count =  {}
         tree_list = {}
         graph_list = {}
@@ -256,7 +260,11 @@ class Dataset:
 
 
                 entry = {'now_label' : current_label, 'next_label' : next_label, 'all_next_label' : couple,
-                         'path': path, 'segment':segment, 'history':label_history, 'activity': activity}
+                         'path': path, 'segment':segment, 'history':label_history, 'activity': activity, 'time_step': step}
+                if path not in ordered_collection:
+                    ordered_collection[path] = {}
+                ordered_collection[path][step] = entry
+                 
                 if config.balance_key != 'all':
                     if config.balance_key is 'now':
                         balance = current_label
@@ -313,7 +321,7 @@ class Dataset:
                 transition[i,j] /=  tot_row
 
         pbar.close()
-        return collection, multi_list, couple_count, max_history
+        return collection, ordered_collection, multi_list, couple_count, max_history
 
     def label_calculator(self, frame_list, path, next_current):
         label_clip = {}

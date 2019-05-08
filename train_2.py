@@ -88,7 +88,6 @@ def train():
 
 
         # Loading initial C3d or presaved network
-        config.load_pretrained_weigth = True
         if os.path.isfile('./checkpoint/checkpoint') and config.load_pretrained_weigth:
             print('new model loaded')
             Train_Net.model_saver.restore(sess, tf.train.latest_checkpoint('./checkpoint'))
@@ -96,34 +95,30 @@ def train():
             print('original c3d loaded')
             Train_Net.c3d_loader.restore(sess, config.c3d_ucf_weights)
 
-        confusion_train_Lstm = np.zeros((number_of_classes, number_of_classes))
-        confusion_train_C3d = np.zeros((number_of_classes, number_of_classes))
-        confusion_train_Next = np.zeros((number_of_classes, number_of_classes))
-        confusion_val_Lstm = np.zeros((number_of_classes, number_of_classes))
-        confusion_val_C3d = np.zeros((number_of_classes, number_of_classes))
-        confusion_val_Next = np.zeros((number_of_classes, number_of_classes))
+        # confusion_train_Lstm = np.zeros((number_of_classes, number_of_classes))
+        # confusion_train_C3d = np.zeros((number_of_classes, number_of_classes))
+        # confusion_train_Next = np.zeros((number_of_classes, number_of_classes))
+        # confusion_val_Lstm = np.zeros((number_of_classes, number_of_classes))
+        # confusion_val_C3d = np.zeros((number_of_classes, number_of_classes))
+        # confusion_val_Next = np.zeros((number_of_classes, number_of_classes))
         step = 0
         training = True
         with tf.name_scope('whole_saver'):
             whole_saver = tf.train.Saver()
-        minimum_trimmed = config.snow_ball_per_class * number_of_classes
         pbar_whole = tqdm(total=(config.tot_steps), desc='Step')
         while step < config.tot_steps:
             ready_batch = 0
-            pbar = tqdm(total=(config.tasks * config.Batch_size * len(available_gpus) * config.frames_per_step + len(available_gpus)*config.tasks - 1), leave=False, desc='Batch Generation')
+            pbar = tqdm(total=(config.tasks * config.Batch_size * config.seq_len * len(available_gpus) * config.frames_per_step + len(available_gpus)*config.tasks - 1), leave=False, desc='Batch Generation')
             ready_batch = IO_tool.compute_batch(pbar, Devices=len(available_gpus), Train=training)
             for batch in ready_batch:
-                summary, t_op, y_Lstm, y_c3d, c_state, h_state = sess.run([Train_Net.merged, Train_Net.train_op,
-                                                                                                   Train_Net.predictions_Lstm_list, Train_Net.predictions_c3d_list,
-                                                                                                   Train_Net.c_out_list, Train_Net.h_out_list],
-                                                                                                  feed_dict={Input_net.input_batch: batch['X'],
-                                                                                                             Input_net.labels: batch['Y'],
-                                                                                                             Input_net.c_input: batch['c'],
-                                                                                                             Input_net.h_input: batch['h'],
-                                                                                                             Input_net.next_labels: batch['next_Y'],
-                                                                                                             Input_net.activity_labels: batch['activity_Y'],
-                                                                                                             Input_net.history_labels: batch['history'],
-                                                                                                             Input_net.multiple_next_labels: batch['multi_next_Y']})
+                summary, t_op, now_pred, next_pred, c3d_predm, c_state, h_state = sess.run([Train_Net.merged, Train_Net.train_op,
+                                                                                            Train_Net.predictions_now, Train_Net.predictions_next, Train_Net.predictions_c3d,
+                                                                                            Train_Net.c_out_list, Train_Net.h_out_list],
+                                                                                            feed_dict={Input_net.input_batch: batch['X'],
+                                                                                                        Input_net.labels: batch['Y'],
+                                                                                                        Input_net.c_input: batch['c'],
+                                                                                                        Input_net.h_input: batch['h'],
+                                                                                                        Input_net.next_labels: batch['next_Y']})
 
                 for j in range(len(batch['video_name_collection'])):
                     for y in range(c_state[0].shape[0]):
@@ -156,17 +151,14 @@ def train():
 
                         for batch in val_batch:
 
-                            summary, y_Lstm, y_c3d, c_state, h_state = sess.run([Train_Net.merged,
-                                                                                                               Train_Net.predictions_Lstm_list, Train_Net.predictions_c3d_list,
-                                                                                                               Train_Net.c_out_list, Train_Net.h_out_list],
-                                                                                                              feed_dict={Input_net.input_batch: batch['X'],
-                                                                                                                         Input_net.labels: batch['Y'],
-                                                                                                                         Input_net.c_input: batch['c'],
-                                                                                                                         Input_net.h_input: batch['h'],
-                                                                                                                         Input_net.history_labels: batch['history'],
-                                                                                                                         Input_net.activity_labels: batch['activity_Y'],
-                                                                                                                         Input_net.next_labels: batch['next_Y'],
-                                                                                                                         Input_net.multiple_next_labels: batch['multi_next_Y']})
+                            summary, now_pred, c3d_pred, next_pred, c_state, h_state = sess.run([Train_Net.merged, Train_Net.predictions_now,
+                                                                                                Train_Net.predictions_c3d, Train_Net.predictions_next,
+                                                                                                Train_Net.c_out_list, Train_Net.h_out_list],
+                                                                                                feed_dict={Input_net.input_batch: batch['X'],
+                                                                                                            Input_net.labels: batch['Y'],
+                                                                                                            Input_net.c_input: batch['c'],
+                                                                                                            Input_net.h_input: batch['h'],
+                                                                                                            Input_net.next_labels: batch['next_Y']})
 
                             for j in range(len(batch['video_name_collection'])):
                                 for y in range(c_state[0].shape[0]):
