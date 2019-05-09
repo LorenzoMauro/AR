@@ -101,8 +101,8 @@ class IO_manager:
         batch = np.zeros(shape=(config.Batch_size, config.seq_len, config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=np.uint8)
         labels = np.zeros(shape=(config.Batch_size,config.seq_len), dtype=int)
         next_labels = np.zeros(shape=(config.Batch_size), dtype=int)
-        c = np.zeros(shape=(config.Batch_size, config.hidden_states_dim), dtype=float)
-        h = np.zeros(shape=(config.Batch_size, config.hidden_states_dim), dtype=float)
+        c = np.zeros(shape=(len(config.encoder_lstm_layers), config.Batch_size, config.hidden_states_dim), dtype=float)
+        h = np.zeros(shape=(len(config.encoder_lstm_layers), config.Batch_size, config.hidden_states_dim), dtype=float)
 
         # Selecting correct dataset
         if Train:

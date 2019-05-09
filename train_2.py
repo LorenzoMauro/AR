@@ -3,7 +3,7 @@ import os
 import multiprocessing.dummy as mp
 import numpy as np
 from tqdm import tqdm
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import pprint
 from batch_generator_test import IO_manager
 from network_seq import activity_network
@@ -15,7 +15,7 @@ from tensorflow.python.client import device_lib
 pp = pprint.PrettyPrinter(indent=4)
 tf_config = tf.ConfigProto(inter_op_parallelism_threads=config.inter_op_parallelism_threads, allow_soft_placement = True)
 tf_config.gpu_options.allow_growth = config.allow_growth
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 def calculate_confusion_matrix(confusion, batch, y_pred, step, folder_name, id_to_label):
     if not os.path.exists('./results/confusion_matrix/' + folder_name + '/'):
@@ -121,11 +121,15 @@ def train():
                                                                                                         Input_net.next_labels: batch['next_Y']})
 
                 for j in range(len(batch['video_name_collection'])):
-                    for y in range(c_state[0].shape[0]):
-                        IO_tool.add_hidden_state(batch['video_name_collection'][j][y],
-                                                batch['segment_collection'][j][y][1],
-                                                h_state[j][y],
-                                                c_state[j][y])
+                    for y in range(c_state[0].shape[1]):
+                        video_name = batch['video_name_collection'][j][y]
+                        segment = batch['segment_collection'][j][y][1]
+                        h = h_state[j][:, y, :]
+                        c = c_state[j][:, y, :]
+                        IO_tool.add_hidden_state(video_name,
+                                                segment,
+                                                h,
+                                                c)
                         # IO_tool.add_output_collection(batch['video_name_collection'][j][y],
                         #                         batch['segment_collection'][j][y][1],
                         #                         multi[j][y],
@@ -161,11 +165,15 @@ def train():
                                                                                                             Input_net.next_labels: batch['next_Y']})
 
                             for j in range(len(batch['video_name_collection'])):
-                                for y in range(c_state[0].shape[0]):
-                                    IO_tool.add_hidden_state(batch['video_name_collection'][j][y],
-                                                            batch['segment_collection'][j][y][1],
-                                                            h_state[j][y],
-                                                            c_state[j][y])
+                                for y in range(c_state[0].shape[1]):
+                                    video_name = batch['video_name_collection'][j][y]
+                                    segment = batch['segment_collection'][j][y][1]
+                                    h_state = h_state[j][:, y, :]
+                                    c_state = c_state[j][:, y, :] 
+                                    IO_tool.add_hidden_state(video_name,
+                                                            segment,
+                                                            h,
+                                                            c)
                                     # IO_tool.add_output_collection(batch['video_name_collection'][j][y],
                                     #                               batch['segment_collection'][j][y][1],
                                     #                               multi[j][y],
@@ -181,7 +189,7 @@ def train():
 
                     IO_tool.save_hidden_state_collection()
                     # IO_tool.save_output_collection()
-                    # IO_tool.hidden_states_statistics()
+                    IO_tool.hidden_states_statistics()
                     # confusion_train_Lstm = np.zeros((number_of_classes, number_of_classes))
                     # confusion_train_C3d = np.zeros((number_of_classes, number_of_classes))
                     # confusion_train_Next = np.zeros((number_of_classes, number_of_classes))

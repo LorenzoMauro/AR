@@ -13,13 +13,16 @@ class Input_manager:
 
             with tf.name_scope("Input"):
                 self.input_batch = tf.placeholder(tf.uint8, shape=(None, config.Batch_size, config.seq_len, config.frames_per_step, config.out_H, config.out_W, config.input_channels), name="Input")
-                self.h_input = tf.placeholder(tf.float32, shape=(None, config.Batch_size, config.lstm_units), name="Previous_hidden_state")
-                self.c_input = tf.placeholder(tf.float32, shape=(None, config.Batch_size, config.lstm_units), name="Previous_hidden_state")
+                self.h_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), config.Batch_size, config.lstm_units), name="Previous_hidden_state")
+                self.c_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), config.Batch_size, config.lstm_units), name="Previous_hidden_state")
+                self.c_output = self.c_input
+                self.h_output = self.h_input
 
             with tf.name_scope("Now_target"):
                 self.labels = tf.placeholder(tf.int32, shape=(None, config.Batch_size, config.seq_len), name="Target")
                 self.next_labels = tf.placeholder(tf.int32, shape=(None, config.Batch_size), name="next_labels")
                 self.dec_embeddings = tf.Variable(tf.random_uniform([len(IO_tool.dataset.label_to_id), config.decoder_embedding_size]))
+            debug_writer = tf.summary.FileWriter("debug", tf.get_default_graph())
 
 class activity_network:
     def __init__(self, number_of_classes, number_of_activities, Input_manager, device_j, IO_tool):
@@ -52,8 +55,8 @@ class activity_network:
             with tf.name_scope("Input"):
                 self.input_batch = tf.squeeze(Input_manager.input_batch[device_j, :, :, :, :, :])
                 self.input_batch = tf.cast(self.input_batch, tf.float32)
-                self.h_input = tf.squeeze(Input_manager.h_input[device_j, :, :])
-                self.c_input = tf.squeeze(Input_manager.c_input[device_j, :, :])
+                self.h_input = tf.squeeze(Input_manager.h_input[device_j, :, :, :])
+                self.c_input = tf.squeeze(Input_manager.c_input[device_j, :, :, :])
 
             with tf.name_scope("Now_Target"):
                 self.labels = tf.squeeze(Input_manager.labels[device_j, :, :])
@@ -126,13 +129,28 @@ class activity_network:
                 self.autoenc_out = tf.layers.dense(dense2_cd, self.c3d_out.shape[-1])
 
             with tf.name_scope("Lstm_encoder"):
-                encoder_cell = tf.contrib.rnn.LSTMCell(config.lstm_units, name='now_cell')
-                state = tf.contrib.rnn.LSTMStateTuple(self.c_input, self.h_input)
-                encoder_output, encoder_state = tf.nn.dynamic_rnn(encoder_cell, self.out_pL,
-                                                                    initial_state=state,
+                encoder_cells = [tf.contrib.rnn.LSTMCell(config.lstm_units) for n in config.encoder_lstm_layers]
+                stacked_cell = tf.contrib.rnn.MultiRNNCell(encoder_cells)
+
+                states = []
+                for d in range(self.c_input.shape[0]):
+                    states.append(tf.contrib.rnn.LSTMStateTuple(self.c_input[d, :, :], self.h_input[d, : , :]))
+                states = tuple(states)
+
+                encoder_output, encoder_state = tf.nn.dynamic_rnn(stacked_cell, self.out_pL,
+                                                                    initial_state=states,
                                                                     dtype=tf.float32)
-                self.c_out = encoder_state.c
-                self.h_out = encoder_state.h
+
+                c_out = tf.expand_dims(encoder_state[0].c, axis=0)
+                h_out = tf.expand_dims(encoder_state[0].h, axis=0)
+                for d in range(1, self.c_input.shape[0]):
+                    c_exp = tf.expand_dims(encoder_state[d].c, axis=0)
+                    h_exp = tf.expand_dims(encoder_state[d].h, axis=0)
+                    c_out = tf.concat([c_out, c_exp], axis=0)
+                    h_out = tf.concat([h_out, h_exp], axis=0)
+                self.c_out = c_out
+                self.h_out = h_out
+                encoder_state = encoder_state[-1]
    
             def decoder_lstm(dec_lstm_units):
                 output_layer = tf.layers.Dense(self.out_vocab_size, kernel_initializer = tf.truncated_normal_initializer(mean = 0.0, stddev=0.1))
@@ -338,7 +356,6 @@ class Training:
                 init_global = tf.global_variables_initializer()
                 init_local = tf.local_variables_initializer()
                 self.init = tf.group(init_local, init_global)
-            debug_writer = tf.summary.FileWriter("debug", tf.get_default_graph())
 
 
     def accuracy_metrics(self, predicted, actual):
