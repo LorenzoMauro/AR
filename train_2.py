@@ -168,12 +168,12 @@ def train():
                                 for y in range(c_state[0].shape[1]):
                                     video_name = batch['video_name_collection'][j][y]
                                     segment = batch['segment_collection'][j][y][1]
-                                    h_state = h_state[j][:, y, :]
-                                    c_state = c_state[j][:, y, :] 
+                                    h = h_state[j][:, y, :]
+                                    c = c_state[j][:, y, :]
                                     IO_tool.add_hidden_state(video_name,
-                                                            segment,
-                                                            h,
-                                                            c)
+                                                segment,
+                                                h,
+                                                c)
                                     # IO_tool.add_output_collection(batch['video_name_collection'][j][y],
                                     #                               batch['segment_collection'][j][y][1],
                                     #                               multi[j][y],

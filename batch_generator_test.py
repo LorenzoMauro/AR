@@ -132,8 +132,8 @@ class IO_manager:
                     if path in self.hidden_states_collection:
                         start_frame = segment[0] - 1
                         if start_frame in self.hidden_states_collection[path].keys():
-                            c[j, :] = self.hidden_states_collection[path][start_frame]['c']
-                            h[j, :] = self.hidden_states_collection[path][start_frame]['h']
+                            c[:, j, :] = self.hidden_states_collection[path][start_frame]['c']
+                            h[:, j, :] = self.hidden_states_collection[path][start_frame]['h']
 
                 if s == config.seq_len - 1:
                     segment_collection.append(segment)

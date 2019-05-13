@@ -121,7 +121,6 @@ class activity_network:
                 dense1_cd = tf.layers.dense(self.c3d_out, config.enc_fc_1)
                 dense2_cd = tf.layers.dense(dense1_cd, config.enc_fc_2)
                 self.out_pL = tf.layers.dense(dense2_cd, config.lstm_units)
-                exp_out_pL = tf.expand_dims(self.out_pL, 1)
 
             with tf.name_scope("Dimension_Decoder"):
                 dense1_cd = tf.layers.dense(self.out_pL, config.enc_fc_2)
@@ -137,7 +136,7 @@ class activity_network:
                     states.append(tf.contrib.rnn.LSTMStateTuple(self.c_input[d, :, :], self.h_input[d, : , :]))
                 states = tuple(states)
 
-                encoder_output, encoder_state = tf.nn.dynamic_rnn(stacked_cell, self.out_pL,
+                _, encoder_state = tf.nn.dynamic_rnn(stacked_cell, self.out_pL,
                                                                     initial_state=states,
                                                                     dtype=tf.float32)
 
@@ -188,11 +187,16 @@ class activity_network:
                 self.next_predictions = tf.argmax(input=self.next_softmax, axis=1, name="c3d_prediction")
                 self.next_one_hot_prediction= tf.one_hot(self.next_predictions, depth = self.next_softmax.shape[-1])
             
+            def c3d_classifier_dense(x):
+                with tf.variable_scope("c3d_classifier_dense", reuse=tf.AUTO_REUSE):
+                    out_cd = tf.layers.dense(x, config.pre_class, name="c3d_dense_1")
+                    out_cd_2 = tf.layers.dense(out_cd, config.pre_class, name="c3d_dense_2")
+                    logit = tf.layers.dense(out_cd_2, self.number_of_classes, name="c3d_dense_3")
+                return logit
 
-            with tf.name_scope("c3d_classifier"):
-                self.out_cd = tf.layers.dense(self.c3d_out, config.pre_class)
-                self.out_cd = tf.layers.dense(self.out_cd, self.number_of_classes)
-                self.softmax_c3d = tf.nn.softmax(self.out_cd)
+            with tf.name_scope('c3d_classifier'):
+                self.logit_c3d = tf.map_fn(lambda x: c3d_classifier_dense(x), self.c3d_out)
+                self.softmax_c3d = tf.nn.softmax(self.logit_c3d)
                 self.predictions_c3d = tf.argmax(input=self.softmax_c3d, axis=2, name="c3d_prediction")
                 self.c3d_one_hot_prediction= tf.one_hot(self.predictions_c3d, depth = self.softmax_c3d.shape[-1])
 
@@ -253,7 +257,7 @@ class Training:
                     z = 0
                     with tf.name_scope(Net):
                         with tf.name_scope("C3d_Loss"):
-                            cross_entropy_c3d_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label, logits=Networks[Net].out_cd)
+                            cross_entropy_c3d_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label, logits=Networks[Net].logit_c3d)
                             c3d_loss = tf.reduce_sum(cross_entropy_c3d_vec)
 
                         with tf.name_scope("Now_Loss"):
