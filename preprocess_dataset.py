@@ -20,87 +20,83 @@ import time
 
 class preprocess:
     def __init__(self):
+        self.preprocess_path = "dataset/preprocessed/"
         with tf.Session() as sess:
-            with h5py.File("dataset/preprocessed/dataset.h5", "a") as hf:
-                print(hf.keys())
-                self.sess = sess
-                self.openpose = OpenPose(self.sess)
-                self.openpose.load_openpose_weights()
-                json_data = open(config.ocado_annotation).read()
-                dataset = json.loads(json_data)
-                pbar_file = tqdm(total=len(dataset), leave=False, desc='Files')
-                for root, dirs, files in os.walk(config.ocado_path):
-                    for fl in files:
-                        path = root + '/' + fl
-                        if fl in dataset:
-                            if path not in hf.keys():
-                                start_frame = -1
-                                length = 0
-                                while length == 0:
-                                    start_frame += 1
-                                    video = cv2.VideoCapture(path)
-                                    video.set(cv2.CAP_PROP_POS_AVI_RATIO, start_frame)
-                                    length = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-                                    video.set(1, start_frame)
-                                    ret, prev = video.read()
-                                    gray = cv2.cvtColor(prev, cv2.COLOR_BGR2GRAY)
-                                    print('\n')
-                                    print(path)
-                                    print(length)
-                                    print(start_frame)
+            self.sess = sess
+            self.openpose = OpenPose(self.sess)
+            self.openpose.load_openpose_weights()
+            json_data = open(config.ocado_annotation).read()
+            dataset = json.loads(json_data)
+            pbar_file = tqdm(total=len(dataset), leave=False, desc='Files')
+            for root, dirs, files in os.walk(config.ocado_path):
+                for fl in files:
+                    path = root + '/' + fl
+                    if fl in dataset:
+                        file_path = self.preprocess_path + fl.split('.')[0]
+                        if not os.path.exists(file_path):
+                            os.makedirs(file_path)
+                        start_frame = 0
+                        video = cv2.VideoCapture(path)
+                        video.set(cv2.CAP_PROP_POS_AVI_RATIO, start_frame)
+                        length = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+                        video.set(1, start_frame)
+                        ret, prev = video.read()
+                        prev_gray = cv2.cvtColor(prev, cv2.COLOR_BGR2GRAY)
+    
+                        pbar_frame = tqdm(total=length, leave=False, desc='Frame')
 
-                                pbar_frame = tqdm(total=length, leave=False, desc='Frame')
-                                video_matrix = np.zeros(shape=(length, 368, 368, 8), dtype=np.uint8)
-                                frame_matrix = np.zeros(shape=(1, 368, 368, 8), dtype=float)
-                                res_gray = cv2.resize(gray, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
-                                frame_matrix[0, :, :, 7] = res_gray
-                                frame_matrix = 255 * frame_matrix  # Now scale by 255
-                                frame_matrix = frame_matrix.astype(np.uint8)
-                                video_matrix[0, :, :, :] = frame_matrix
-
-                                for frame in range(1, length):
-                                    try:
-                                        video.set(1, frame)
-                                        ret, im = video.read()
-                                        video.set(1, frame)
-                                        ret, im = video.read()
-                                        gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-                                        res_gray = cv2.resize(gray, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
-                                        gray_prev = video_matrix[frame-1, :, :, 7]
-                                        gray_prev_float = gray_prev.astype(np.uint8)
-                                        flow = cv2.calcOpticalFlowFarneback(gray_prev_float, res_gray, flow=None,
-                                                                            pyr_scale=0.5, levels=1,
-                                                                            winsize=15, iterations=3,
-                                                                            poly_n=5, poly_sigma=1.1, flags=0)
-                                        norm_flow = flow
-                                        norm_flow = cv2.normalize(flow, norm_flow, 0, 255, cv2.NORM_MINMAX)
-                                        res_im = cv2.resize(im, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
-                                        res_norm_flow = cv2.resize(norm_flow, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
-                                        pafMat, heatMat = self.openpose.compute_pose_frame(res_im)
-                                        res_pafMat = cv2.resize(pafMat, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
-                                        res_heatMat = cv2.resize(heatMat, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
-                                        frame_matrix = np.zeros(shape=(1, 368, 368, 8), dtype=float)
-
-                                        frame_matrix[0, :, :, :3] = res_im
-                                        frame_matrix[0, :, :, 7] = res_gray
-                                        frame_matrix[0, :, :, 5:7] = res_norm_flow
-                                        frame_matrix[0, :, :, 3] = res_pafMat
-                                        frame_matrix[0, :, :, 4] = res_heatMat
-                                        frame_matrix = 255 * frame_matrix  # Now scale by 255
-                                        frame_matrix = frame_matrix.astype(
-                                            np.uint8)
-
-                                        video_matrix[frame, :, :, :] = frame_matrix
-                                    except Exception as e:
-                                        print(e)
-                                        print(path + '    frame:' + str(frame))
-                                        pass
-                                    pbar_frame.update(1)
-                                dset = hf.create_dataset(path, data=video_matrix)
-                                pbar_frame.refresh()
-                                pbar_frame.close()
-                                pbar_file.update(1)
+                        for frame in range(1, length):
+                            frame_path = file_path + "/" + str(frame)
+                            if not os.path.isfile(frame_path + '_heatMat.jpg'):
+                                frame_matrix = np.zeros(shape=(368, 368, 7), dtype=float)
+                                try:
+                                    video.set(1, frame)
+                                    ret, im = video.read()
+                                    video.set(1, frame)
+                                    ret, im = video.read()
+                                    gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+                                    flow = cv2.calcOpticalFlowFarneback(prev_gray, gray, flow=None,
+                                                                        pyr_scale=0.5, levels=1,
+                                                                        winsize=15, iterations=3,
+                                                                        poly_n=5, poly_sigma=1.1, flags=0)
+                                    prev_gray = gray
+                                    res_im = cv2.resize(im, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
+                                    res_flow = cv2.resize(flow, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
+                                    pafMat, heatMat = self.openpose.compute_pose_frame(res_im)
+                                    res_pafMat = cv2.resize(pafMat, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
+                                    res_heatMat = cv2.resize(heatMat, dsize=(368, 368), interpolation=cv2.INTER_CUBIC)
+                                    frame_matrix[:, :, :3] = cv2.normalize(res_im, None, 0, 255, cv2.NORM_MINMAX)
+                                    frame_matrix[:, :, 5:7] = cv2.normalize(res_flow, None, 0, 255, cv2.NORM_MINMAX)
+                                    frame_matrix[:, :, 3] = cv2.normalize(res_pafMat, None, 0, 255, cv2.NORM_MINMAX)
+                                    frame_matrix[:, :, 4] = cv2.normalize(res_heatMat, None, 0, 255, cv2.NORM_MINMAX)
+                                    frame_matrix = frame_matrix.astype(np.uint8)
+                                    self.save_frame(frame_matrix, frame_path)
+                                except Exception as e:
+                                    print(e)
+                                    print(path + '    frame:' + str(frame))
+                                    pass
+                            pbar_frame.update(1)
+                        pbar_frame.refresh()
+                        pbar_frame.close()
+                        pbar_file.update(1)
                 pbar_file.refresh()
                 pbar_file.clear()
                 pbar_file.close()
+
+    def save_frame(self, frame_matrix, frame_path):
+        cv2.imwrite(frame_path + '_rgb.jpg',frame_matrix[:, :, :3])
+        cv2.imwrite(frame_path + '_flow_1.jpg',frame_matrix[:, :, 5])
+        cv2.imwrite(frame_path + '_flow_2.jpg',frame_matrix[:, :, 6])
+        cv2.imwrite(frame_path + '_pafMat.jpg',frame_matrix[:, :, 3])
+        cv2.imwrite(frame_path + '_heatMat.jpg',frame_matrix[:, :, 4])
+        # flow = frame_matrix[:, :, 5:7]
+        # flow = flow.astype(np.float32)
+        # mag, ang = cv2.cartToPolar(flow[:,:,0], flow[:,:,1])
+        # hsv = np.zeros_like(frame_matrix[:, :, :3])
+        # hsv[:,:,0] = ang *180/np.pi/2
+        # hsv[:,:,1] = 255
+        # hsv[:,:,2] = cv2.normalize(mag,None,0,255,cv2.NORM_MINMAX)
+        # bgr = cv2.cvtColor(hsv,cv2.COLOR_HSV2BGR)
+        # cv2.imwrite(frame_path + '_hsv_flow.jpg',bgr)
+
 prep = preprocess()
