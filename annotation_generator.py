@@ -38,8 +38,13 @@ class Annotation:
         label_to_id, id_to_label = create_labels_mappings(label_collection)
         frames_label = self.compute_frame_label(activity_dataset, help_dataset, config.kit_path, label_to_id)
 
-        for fl in activity_dataset[fl]
-                    for index in range(len(activity_dataset[fl]) - 1):
+        for fl in activity_dataset[fl]:
+            path = root + '/' + fl
+            video = cv2.VideoCapture(path)
+            video.set(cv2.CAP_PROP_POS_AVI_RATIO, 2)
+            fps = video.get(cv2.CAP_PROP_FPS)
+            tot_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+            for index in range(len(activity_dataset[fl]) - 1):
                         segment = annotation['milliseconds']
                         frame = 
                         activity_dataset[fl][index]['next_label'] = activity_dataset[fl][index + 1]['label']
