@@ -1,5 +1,15 @@
 /openpose
 /dataset/Video/Ocado
+/dataset/Video/kit_dataset
+/dataset/frame_label.pkl
+/dataset/activity_to_id.pkl
+/dataset/hidden_states_collection.pkl
+/dataset/id_to_activity.pkl
+/dataset/id_to_label.pkl
+/dataset/label_to_id.pkl
+/dataset/ordered_collection.pkl
+/dataset/test_collection.pkl
+/dataset/train_collection.pkl
 /logdir
 /debug
 /checkpoint
@@ -7,3 +17,4 @@
 /sports1m_finetuning_ucf101.model
 /dataset/preprocessed
 /.vscode/settings.json
+/excluded_video
