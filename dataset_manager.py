@@ -113,7 +113,9 @@ class Dataset:
         id_to_label[0] = 'sil'
         label_to_id['go'] = 1
         id_to_label[1] = 'go'
-        i = 2
+        label_to_id['end'] = 2
+        id_to_label[2] = 'end'
+        i = 3
         for video_name in self.whole_dataset:
             for segment in self.whole_dataset[video_name]:
                 label = segment['label'].lower()

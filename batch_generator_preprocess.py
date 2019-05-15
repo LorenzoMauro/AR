@@ -12,6 +12,7 @@ import config
 import multiprocessing.dummy as mp
 from PIL import Image
 import datetime
+from prep_dataset_manager import prep_dataset
 
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -19,10 +20,9 @@ pp = pprint.PrettyPrinter(indent=4)
 class IO_manager:
     def __init__(self, sess):
         self.dataset = Dataset()
+        self.prep_dataset = prep_dataset()
         self.num_classes = self.dataset.number_of_classes
         self.num_activities = self.dataset.number_of_activities
-        self.sess = sess
-        self.openpose = None
         self.snow_ball_minimum = config.snow_ball_classes
         self.chosen_label = {'now':{}, 'next':{}, 'activity':{}}
         if os.path.isfile('dataset/hidden_states_collection.pkl') and config.reuse_HSM:
@@ -49,7 +49,6 @@ class IO_manager:
 
         pool = mp.Pool(processes=config.processes)
         ready_batch = pool.map(multiprocess_batch, range(0, config.tasks*Devices))
-        ready_batch = self.add_pose(ready_batch, self.sess, augment)
         ready_batch = self.group_batches(ready_batch, Devices, pbar)
         pbar.close()
         pool.close()
@@ -132,15 +131,15 @@ class IO_manager:
                     if path in self.hidden_states_collection:
                         start_frame = segment[0] - 1
                         if start_frame in self.hidden_states_collection[path].keys():
-                            c[:, j, :] = self.hidden_states_collection[path][start_frame]['c']
-                            h[:, j, :] = self.hidden_states_collection[path][start_frame]['h']
+                            c[j, :] = self.hidden_states_collection[path][start_frame]['c']
+                            h[j, :] = self.hidden_states_collection[path][start_frame]['h']
 
                 if s == config.seq_len - 1:
                     segment_collection.append(segment)
                     video_name_collection.append(path)
 
                 s = s + 1
-            labels[j, s] = self.dataset.label_to_id['end']
+            labels[j, s] = self.dataset.label_to_id('end')
             j = j + 1
 
         # pp.pprint(history)
@@ -212,148 +211,23 @@ class IO_manager:
         return final_label
 
     def extract_one_input(self, video_path, segment, pbar):
-        one_input = np.zeros(shape=(config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=np.uint8)
+        one_input = np.zeros(shape=(config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=float)
         extracted_frames = {}
         frame_list = []
         try:
-            video = cv2.VideoCapture(video_path)
-            video.set(cv2.CAP_PROP_POS_AVI_RATIO, 1)
-            length = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
             linspace_frame = np.linspace(segment[0], segment[1], num=config.frames_per_step)
-            tot_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-            if (linspace_frame[-1] == (tot_frames-1)):
-                linspace_frame[-1] -= 1
-            if (linspace_frame[-1] == (tot_frames-2)):
-                linspace_frame[-1] -= 2
             z = 0
             for frame in linspace_frame:
                 try:
-                    frame = int(frame)
-                    frame_prev = frame - 1
-
-                    if frame in extracted_frames:
-                        im = extracted_frames[frame]['im']
-                        gray = extracted_frames[frame]['gray']
-                    else:
-                        video.set(1, frame)
-                        ret, im = video.read()
-                        if not ret:
-                            tot_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-                            print('\n', ret)
-                            print('\nframe', frame)
-                            print('\ntotframe', tot_frames)
-                            print('\nvideo_path', video_path)
-                            print('\nsegment', segment)
-                        im = cv2.resize(im, dsize=(config.op_input_height, config.op_input_width), interpolation=cv2.INTER_CUBIC)
-                        extracted_frames[frame] = {}
-                        extracted_frames[frame]['im'] = im
-                        gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-                        extracted_frames[frame]['gray'] = gray
-
-                    if frame_prev in extracted_frames:
-                        im_prev = extracted_frames[frame_prev]['im']
-                        gray_prev = extracted_frames[frame_prev]['gray']
-                    else:
-                        video.set(1, frame_prev)
-                        ret, im_prev = video.read()
-                        if not ret:
-                            tot_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-                            print('\n', ret)
-                            print('\nprevframe', frame)
-                            print('\ntotframe', tot_frames)
-                            print('\nvideo_path', video_path)
-                            print('\nsegment', segment)
-                        im_prev = cv2.resize(im_prev, dsize=(config.op_input_height, config.op_input_width), interpolation=cv2.INTER_CUBIC)
-                        extracted_frames[frame_prev] = {}
-                        extracted_frames[frame_prev]['im'] = im_prev
-                        gray_prev = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-                        extracted_frames[frame_prev]['gray'] = gray_prev
-
-                    flow = cv2.calcOpticalFlowFarneback(gray_prev, gray, flow=None,
-                                                        pyr_scale=0.5, levels=1,
-                                                        winsize=15, iterations=3,
-                                                        poly_n=5, poly_sigma=1.1, flags=0)
-                    norm_flow = flow
-                    norm_flow = cv2.normalize(flow, norm_flow, 0, 255, cv2.NORM_MINMAX)
-                    norm_flow = norm_flow.astype(np.uint8)
-                    one_input[z, :, :, :3] = im
-                    one_input[z, :, :, 5:7] = flow
+                    one_input[z, :, :, :] = self.prep_dataset.get_matrix(video_path, frame)
                     z += 1
                 except Exception as e:
                     pass
                 pbar.update(1)
         except Exception as e:
             pass
-
         frame_list = extracted_frames.keys()
-        extracted_frames = None
         return one_input, frame_list
-
-    def add_pose(self, X, sess, augment=True):
-        shape = (X[0])['X'].shape
-        total = len(X) * shape[0] * shape[1]* shape[2]
-        augment = 'none'
-        if augment:
-            augment = random.choice(['none', 'horizzontal', 'vertical', 'both'])
-        pbar = tqdm(total=total, leave=False, desc='Computing Poses')
-        for k in range(len(X)):
-            X_data = (X[k])['X']
-            shape = X_data.shape
-            shrinked_X = np.zeros(shape=(shape[0],shape[1], shape[2], config.out_H, config.out_W, shape[5]), dtype=np.uint8)
-            for i in range(shape[0]):
-                for j in range(shape[1]):
-                    for z in range(shape[2]):
-                        try:
-                            X_Data = X_data[i, j, z, :, :, :3].astype(np.uint8)
-                            pafMat, heatMat = self.openpose.compute_pose_frame(X_Data)
-                            heatMat = heatMat.astype(np.uint8)
-                            pafMat = pafMat.astype(np.uint8)
-                            X_data[i, j, z, :, :, 3] = heatMat
-                            X_data[i, j, z, :, :, 4] = pafMat
-                            final_frame = X_data[i, j, z, :, :, :]
-                            shrinked_frame = cv2.resize(final_frame, dsize=(config.out_H, config.out_W), interpolation=cv2.INTER_CUBIC)
-                            shrinked_frame = self.augment_data(shrinked_frame, augment)
-                            shrinked_X[i, j, z, :, :, :] = shrinked_frame
-                            pbar.update(1)
-                        except Exception as e:
-                            print(e)
-                            pass
-            if config.show_pic:
-                self.show_input_pic(X_data)
-            X[k]['X'] = shrinked_X
-        pbar.refresh()
-        pbar.clear()
-        pbar.close()
-        return X
-
-    def show_input_pic(self,X_data):
-        shape = X_data.shape
-        for i in range(shape[0]):
-            for j in range(shape[1]):
-                heatMat = cv2.normalize(X_data[i, j, :, :, 3],None,0,255,cv2.NORM_MINMAX)
-                pafMat = cv2.normalize(X_data[i, j, :, :, 4],None,0,255,cv2.NORM_MINMAX)
-                im = X_data[i, j, :, :, :3]/255
-                flow = X_data[i, j, :, :, 5:]
-                mag, ang = cv2.cartToPolar(flow[:,:,0], flow[:,:,1])
-                im = np.asarray(im, dtype= np.float32)
-                im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
-                hsv = cv2.cvtColor(im, cv2.COLOR_RGB2HSV)
-                hsv[:,:,0] = ang * (180/ np.pi / 2)
-                hsv[:,:,2] = cv2.normalize(mag,None,0,255,cv2.NORM_MINMAX)
-                hsv = np.asarray(hsv, dtype= np.float32)
-                heatMat = np.asarray(heatMat, dtype= np.float32)
-                pafMat = np.asarray(pafMat, dtype= np.float32)
-                rgb_flow = cv2.cvtColor(hsv,cv2.COLOR_HSV2RGB)
-                pafMat_grey = cv2.cvtColor(pafMat, cv2.COLOR_GRAY2BGR)
-                heatMat_grey = cv2.cvtColor(heatMat, cv2.COLOR_GRAY2BGR)
-                # print(im.shape,pafMat_grey.shape,heatMat_grey.shape,rgb_flow.shape)
-                numpy_horizontal_concat = np.concatenate((im, pafMat_grey/255), axis=1)
-                numpy_horizontal_concat_2 = np.concatenate((numpy_horizontal_concat, heatMat_grey/255), axis=1)
-                numpy_horizontal_concat_3 = np.concatenate((numpy_horizontal_concat_2, rgb_flow), axis=1)
-                # cv2.imshow('ImageWindow',numpy_horizontal_concat_3)
-                # cv2.waitKey()
-                im = Image.fromarray(np.uint8(numpy_horizontal_concat_2*255))
-                im.save('picshow/' + str(datetime.datetime.now())+".jpeg")
 
     def save_hidden_state_collection(self):
         with open('dataset/hidden_states_collection.pkl', 'wb') as f:
@@ -400,9 +274,6 @@ class IO_manager:
             self.snow_ball_minimum = number_of_classes
         possible_label = list(range(1, self.snow_ball_minimum+1))
         return possible_label
-
-    def start_openPose(self):
-        self.openpose = OpenPose(self.sess)
 
     def augment_data(self, frame, type):
         if type is 'none':

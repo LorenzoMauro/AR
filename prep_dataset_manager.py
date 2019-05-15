@@ -9,7 +9,7 @@ class prep_dataset:
     def __init__(self):
         self.base_path = "dataset/preprocessed/"
 
-    def get_matrix(self, path,frame):
+    def get_matrix(self, path, frame):
         video_name = path.split('/')[-1].split('.')[0]
         frame_path = self.base_path + video_name + '/' + str(frame)
         im = cv2.imread(frame_path + '_rgb.jpg', cv2.IMREAD_UNCHANGED)

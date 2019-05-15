@@ -12,15 +12,15 @@ class Input_manager:
         with tf.name_scope('Inputs'):
 
             with tf.name_scope("Input"):
-                self.input_batch = tf.placeholder(tf.uint8, shape=(None, config.Batch_size, config.seq_len, config.frames_per_step, config.out_H, config.out_W, config.input_channels), name="Input")
-                self.h_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), config.Batch_size, config.lstm_units), name="Previous_hidden_state")
-                self.c_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), config.Batch_size, config.lstm_units), name="Previous_hidden_state")
+                self.input_batch = tf.placeholder(tf.uint8, shape=(None, None, config.seq_len, config.frames_per_step, config.out_H, config.out_W, config.input_channels), name="Input")
+                self.h_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), None, config.lstm_units), name="Previous_hidden_state")
+                self.c_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), None, config.lstm_units), name="Previous_hidden_state")
                 self.c_output = self.c_input
                 self.h_output = self.h_input
 
             with tf.name_scope("Now_target"):
-                self.labels = tf.placeholder(tf.int32, shape=(None, config.Batch_size, config.seq_len), name="Target")
-                self.next_labels = tf.placeholder(tf.int32, shape=(None, config.Batch_size), name="next_labels")
+                self.labels = tf.placeholder(tf.int32, shape=(None, None, config.seq_len + 1), name="Target")
+                self.next_labels = tf.placeholder(tf.int32, shape=(None, None), name="next_labels")
                 self.dec_embeddings = tf.Variable(tf.random_uniform([len(IO_tool.dataset.label_to_id), config.decoder_embedding_size]))
             debug_writer = tf.summary.FileWriter("debug", tf.get_default_graph())
 
@@ -55,15 +55,19 @@ class activity_network:
             with tf.name_scope("Input"):
                 self.input_batch = tf.squeeze(Input_manager.input_batch[device_j, :, :, :, :, :])
                 self.input_batch = tf.cast(self.input_batch, tf.float32)
+                self.input_batch.set_shape([None, config.seq_len, config.frames_per_step, config.out_H, config.out_W, config.input_channels])
+                self.batch_size = tf.shape(self.input_batch)[0]
                 self.h_input = tf.squeeze(Input_manager.h_input[device_j, :, :, :])
+                self.h_input.set_shape([len(config.encoder_lstm_layers), None, config.lstm_units])
                 self.c_input = tf.squeeze(Input_manager.c_input[device_j, :, :, :])
+                self.c_input.set_shape([len(config.encoder_lstm_layers), None, config.lstm_units])
 
             with tf.name_scope("Now_Target"):
                 self.labels = tf.squeeze(Input_manager.labels[device_j, :, :])
-                now_dec_input = tf.concat([tf.fill([config.Batch_size, 1], IO_tool.dataset.label_to_id['go']), self.labels], 1)
+                now_dec_input = tf.concat([tf.fill([self.batch_size, 1], IO_tool.dataset.label_to_id['go']), self.labels], 1)
                 self.now_one_hot_label= tf.one_hot(self.labels, depth = self.out_vocab_size)
                 now_dec_embed_input = tf.nn.embedding_lookup(Input_manager.dec_embeddings, now_dec_input)
-                now_target_len = tf.ones(shape=(config.Batch_size), dtype=tf.int32)*config.seq_len
+                now_target_len = tf.ones(shape=(self.batch_size), dtype=tf.int32)*(config.seq_len + 1)
 
             
             with tf.name_scope("Next_Target"):
@@ -158,22 +162,41 @@ class activity_network:
 
             def train_lstm(encoder_state, decoder_cell, output_layer, dec_embed_input, target_len):
                 train_helper = tf.contrib.seq2seq.TrainingHelper(inputs=dec_embed_input, sequence_length=target_len)
-                # Decoder
                 train_decoder = tf.contrib.seq2seq.BasicDecoder(decoder_cell, train_helper, encoder_state, output_layer)
-                # Dynamic decoding
                 train_output, _, _ = tf.contrib.seq2seq.dynamic_decode(train_decoder, impute_finished=True)
                 training_logit = tf.identity(train_output.rnn_output, 'logits')
-                training_softmax = tf.nn.softmax(training_logit)
+                return training_logit
+
+            def lstm_classifier(logit):
+                training_softmax = tf.nn.softmax(logit)
                 training_predictions = tf.argmax(input=training_softmax, axis=2, name="classes")
                 training_one_hot_prediction= tf.one_hot(training_predictions, depth = training_softmax.shape[-1])
-                return training_logit, training_softmax, training_predictions, training_one_hot_prediction
+                return training_softmax, training_predictions, training_one_hot_prediction
 
-            with tf.name_scope('Now_Decoder'):
+            def decoding_layer_infer(encoder_state, dec_cell, dec_embeddings, start_of_sequence_id,
+                         end_of_sequence_id, max_target_sequence_length,
+                         vocab_size, output_layer, batch_size):
+                helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(dec_embeddings, tf.fill([batch_size], start_of_sequence_id), end_of_sequence_id)
+                decoder = tf.contrib.seq2seq.BasicDecoder(dec_cell, helper, encoder_state, output_layer)
+                outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder, impute_finished=True, maximum_iterations=max_target_sequence_length)
+                logit = tf.identity(outputs.rnn_output, 'logits')
+                return logit
+
+            with tf.name_scope('Now_Decoder_train'):
                 now_decoder, now_output_layer = decoder_lstm(config.lstm_units)
-                self.now_logit, self.now_softmax, self.now_predictions, self.now_one_hot_prediction = train_lstm(encoder_state, now_decoder, now_output_layer, now_dec_embed_input, now_target_len)
+                self.now_logit = train_lstm(encoder_state, now_decoder, now_output_layer, now_dec_embed_input, now_target_len)
+                self.now_softmax, self.now_predictions, self.now_one_hot_prediction = lstm_classifier(self.now_logit)
+
+            with tf.name_scope('Now_Decoder_inference'):
+                self.inference_logit = decoding_layer_infer(encoder_state, now_decoder, Input_manager.dec_embeddings, IO_tool.dataset.label_to_id['go'],
+                                                        IO_tool.dataset.label_to_id['end'], config.seq_len +1 , self.out_vocab_size, now_output_layer,
+                                                        self.batch_size)
+                paddings = [[0, 0], [0, (config.seq_len + 1)-tf.shape(self.inference_logit)[1]], [0,0 ]]
+                self.inference_logit = tf.pad(self.inference_logit, paddings, 'CONSTANT', constant_values = 1)
+                self.inference_softmax, self.inference_predictions, self.inference_one_hot_prediction = lstm_classifier(self.inference_logit)                           
 
             with tf.name_scope('Next_classifier'):
-                self.now_softmax.set_shape([None, config.seq_len, self.out_vocab_size])
+                self.now_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
                 flat_now = tf.contrib.layers.flatten(self.now_softmax)
                 C_composedVec = tf.concat([encoder_state.c, flat_now], 1)
                 H_composedVec = tf.concat([encoder_state.h, flat_now], 1)
@@ -236,6 +259,7 @@ class Training:
                     if z == 0:
                         c3d_pred_conc = Networks[Net].c3d_one_hot_prediction
                         now_pred_conc = Networks[Net].now_one_hot_prediction
+                        now_inf_pred_conc = Networks[Net].inference_one_hot_prediction
                         next_pred_conc = Networks[Net].next_one_hot_prediction
                         now_label_conc = Networks[Net].now_one_hot_label
                         next_label_conc = Networks[Net].next_one_hot_label
@@ -243,13 +267,16 @@ class Training:
                     else:
                         c3d_pred_conc = tf.concat([c3d_pred_conc, Networks[Net].c3d_one_hot_prediction], axis=0)
                         now_pred_conc = tf.concat([now_pred_conc, Networks[Net].now_one_hot_prediction], axis=0)
+                        now_inf_pred_conc = tf.concat([now_inf_pred_conc, Networks[Net].inference_one_hot_prediction], axis=0)
                         next_pred_conc = tf.concat([next_pred_conc, Networks[Net].next_one_hot_prediction], axis=0)
                         now_label_conc = tf.concat([now_label_conc, Networks[Net].now_one_hot_label], axis=0)
                         next_label_conc = tf.concat([next_label_conc, Networks[Net].next_one_hot_label], axis=0)
 
                 with tf.name_scope('Metrics_calculation'):
-                    c3d_precision, c3d_recall, c3d_f1, c3d_accuracy = self.accuracy_metrics(c3d_pred_conc, now_label_conc)
+                    c3d_precision, c3d_recall, c3d_f1, c3d_accuracy = self.accuracy_metrics(c3d_pred_conc, now_label_conc[:,:-1,:])
                     now_precision, now_recall, now_f1, now_accuracy = self.accuracy_metrics(now_pred_conc, now_label_conc)
+                    # inference_precision, inference_recall, inference_f1, inference_accuracy = self.accuracy_metrics(now_inf_pred_conc[:,:config.seq_len + 1,:], now_label_conc)
+                    inference_precision, inference_recall, inference_f1, inference_accuracy = self.accuracy_metrics(now_inf_pred_conc, now_label_conc)
                     next_precision, next_recall, next_f1, next_accuracy = self.accuracy_metrics(next_pred_conc, next_label_conc)
 
             with tf.name_scope('Loss'):
@@ -257,7 +284,7 @@ class Training:
                     z = 0
                     with tf.name_scope(Net):
                         with tf.name_scope("C3d_Loss"):
-                            cross_entropy_c3d_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label, logits=Networks[Net].logit_c3d)
+                            cross_entropy_c3d_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].logit_c3d)
                             c3d_loss = tf.reduce_sum(cross_entropy_c3d_vec)
 
                         with tf.name_scope("Now_Loss"):
@@ -339,6 +366,7 @@ class Training:
                 tf.summary.scalar('Now_Loss', now_loss_sum)
                 tf.summary.scalar('Next_Loss', next_loss_sum)
                 tf.summary.scalar('now_recall', now_recall)
+                tf.summary.scalar('now_inference_recall', inference_recall)
                 tf.summary.scalar('next_recall', next_recall)
                 tf.summary.scalar('c3d_recall', c3d_recall)
                 self.merged = tf.summary.merge_all()
