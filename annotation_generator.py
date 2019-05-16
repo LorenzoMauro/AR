@@ -3,6 +3,7 @@ import config
 import os
 import pprint
 from tqdm import tqdm
+import cv2
 pp = pprint.PrettyPrinter(indent=4)
 
 class Annotation:
