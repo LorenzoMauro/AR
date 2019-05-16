@@ -97,7 +97,6 @@ class Annotation:
                 for frame in range(1, tot_frames):
                     frame_in_msec = (frame / float(fps)) * 1000
                     label = 'sil'
-                    labels 
                     labels = {'now': label_to_id[label], 'next': label_to_id[label], 'help': label_to_id[label]}
                     for annotation in activity_dataset[entry]:
                         segment = annotation['milliseconds']
