@@ -112,11 +112,11 @@ class IO_manager:
             dataset = self.dataset.test_collection
         ordered_collection = self.dataset.ordered_collection
 
-        j = 0
         d = 0
         while d < Devices:
             segment_collection = []
             video_name_collection = []
+            j = 0
             while j < config.Batch_size:
                 entry_list = self.entry_selector(dataset,ordered_collection, config.is_ordered)
                 s = 0
