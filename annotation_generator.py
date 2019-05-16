@@ -9,8 +9,7 @@ class Annotation:
         if config.dataset is 'Ocado':
             json_data = open(config.ocado_annotation).read()
             Dataset = json.loads(json_data)
-            Dataset = self.create_ocado_annotation(Dataset)
-            self.Dataset = Dataset
+            self.dataset, self.frames_label, self.label_to_id, self.id_to_label = self.create_ocado_annotation(Dataset)
 
     def create_ocado_annotation(self, activity_dataset, help_dataset):
         label_collection = []
@@ -39,28 +38,29 @@ class Annotation:
         frames_label = self.compute_frame_label(activity_dataset, help_dataset, config.kit_path, label_to_id)
 
         for fl in activity_dataset[fl]:
-            path = root + '/' + fl
-            video = cv2.VideoCapture(path)
-            video.set(cv2.CAP_PROP_POS_AVI_RATIO, 2)
-            fps = video.get(cv2.CAP_PROP_FPS)
-            tot_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-            for index in range(len(activity_dataset[fl])):
-                        segment = annotation['milliseconds']
-                        frame_start = int((segment[0]*fps)/1000)
-                        frame_end = int((segment[1]*fps)/1000)
-                        next_collection = []
-                        help_collection = []
-                        for frame in range(frame_start,frame_end):
-                            next_collection.append(frames_label[path][frame]['next'])
-                            help_collection.append(frames_label[path][frame]['help'])
-                        next_label = max(set(next_collection), key=next_collection.count)
-                        help_label = max(set(help_collection), key=help_collection.count)
-                        activity_dataset[fl][index]['next_label'] = next_label
-                        activity_dataset[fl][index]['help'] = help_label
-                else:
-                    if fl in activity_dataset:
-                        del activity_dataset[fl]
-        return dataset
+            if fl not in files:
+                del activity_dataset[fl]
+            else:
+                path = root + '/' + fl
+                video = cv2.VideoCapture(path)
+                video.set(cv2.CAP_PROP_POS_AVI_RATIO, 2)
+                fps = video.get(cv2.CAP_PROP_FPS)
+                tot_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+                for index in range(len(activity_dataset[fl])):
+                            segment = annotation['milliseconds']
+                            frame_start = int((segment[0]*fps)/1000)
+                            frame_end = int((segment[1]*fps)/1000)
+                            next_collection = []
+                            help_collection = []
+                            for frame in range(frame_start,frame_end):
+                                next_collection.append(frames_label[path][frame]['next'])
+                                help_collection.append(frames_label[path][frame]['help'])
+                            next_label = max(set(next_collection), key=next_collection.count)
+                            help_label = max(set(help_collection), key=help_collection.count)
+                            activity_dataset[fl][index]['next_label'] = next_label
+                            activity_dataset[fl][index]['help'] = help_label
+
+        return activity_dataset, frames_label, label_to_id, id_to_label
 
     def compute_frame_label(self, activity_dataset, help_dataset, dataset_path, label_to_id):
             collection = {}
@@ -89,7 +89,7 @@ class Annotation:
                     frame_in_msec = (frame / float(fps)) * 1000
                     label = 'sil'
                     labels 
-                    = {'now': label_to_id[label], 'next': label_to_id[label], 'help': label_to_id[label]}
+                    labels = {'now': label_to_id[label], 'next': label_to_id[label], 'help': label_to_id[label]}
                     for annotation in activity_dataset[entry]:
                         segment = annotation['milliseconds']
                         if frame_in_msec <= segment[1] and frame_in_msec >= segment[0]:

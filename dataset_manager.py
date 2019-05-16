@@ -40,17 +40,15 @@ class Dataset:
         pp.pprint(self.id_to_label)
 
     def generate_dataset(self):
-        self.whole_dataset = Annotation().Dataset
-        self.label_to_id, self.id_to_label = self.create_labels_mappings()
+        self.whole_dataset = Annotation().dataset
+        self.label_to_id =  Annotation().label_to_id
+        self.id_to_label =  Annotation().id_to_label
+        self.frame_label =  Annotation().frame_label
+        self.number_of_classes = len(self.id_to_label)
         self.save(self.label_to_id, 'label_to_id')
         self.save(self.id_to_label, 'id_to_label')
-        self.number_of_classes = len(self.id_to_label)
-        self.activity_to_id, self.id_to_activity = self.create_activity_mappings()
-        self.save(self.activity_to_id, 'activity_to_id')
-        self.save(self.id_to_activity, 'id_to_activity')
-        self.number_of_activities = len(self.id_to_label)
+        self.save(self.frame_label, 'frame_label')
         self.validation_fraction = config.validation_fraction
-        self.frame_label = self.compute_frame_label(self.whole_dataset, next=False)
         if not config.split_seconds:
             self.Train_dataset, self.Val_dataset = self.split_dataset()
             self.train_collection,self.ordered_collection, self.train_multi_list, self.train_couple_count, self.max_history= self.new_collection(self.Train_dataset)
@@ -61,7 +59,6 @@ class Dataset:
             self.collection, self.ordered_collection, self.multi_list, self.couple_count, self.max_history= self.new_collection(self.whole_dataset)
             self.train_collection, self.test_collection = self.split_dataset_second(self.collection)
 
-        self.save(self.frame_label, 'frame_label')
         self.save(self.train_collection, 'train_collection')
         self.save(self.test_collection, 'test_collection')
         self.save(self.ordered_collection, 'ordered_collection')
