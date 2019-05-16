@@ -44,11 +44,19 @@ class Annotation:
             video.set(cv2.CAP_PROP_POS_AVI_RATIO, 2)
             fps = video.get(cv2.CAP_PROP_FPS)
             tot_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-            for index in range(len(activity_dataset[fl]) - 1):
+            for index in range(len(activity_dataset[fl])):
                         segment = annotation['milliseconds']
-                        frame = 
-                        activity_dataset[fl][index]['next_label'] = activity_dataset[fl][index + 1]['label']
-                    activity_dataset[fl][-1]['next_label'] = 'sil'
+                        frame_start = int((segment[0]*fps)/1000)
+                        frame_end = int((segment[1]*fps)/1000)
+                        next_collection = []
+                        help_collection = []
+                        for frame in range(frame_start,frame_end):
+                            next_collection.append(frames_label[path][frame]['next'])
+                            help_collection.append(frames_label[path][frame]['help'])
+                        next_label = max(set(next_collection), key=next_collection.count)
+                        help_label = max(set(help_collection), key=help_collection.count)
+                        activity_dataset[fl][index]['next_label'] = next_label
+                        activity_dataset[fl][index]['help'] = help_label
                 else:
                     if fl in activity_dataset:
                         del activity_dataset[fl]
@@ -80,7 +88,8 @@ class Annotation:
                 for frame in range(1, tot_frames):
                     frame_in_msec = (frame / float(fps)) * 1000
                     label = 'sil'
-                    labels = {'now': label_to_id[label], 'next': label_to_id[label], 'help': label_to_id[label]}
+                    labels 
+                    = {'now': label_to_id[label], 'next': label_to_id[label], 'help': label_to_id[label]}
                     for annotation in activity_dataset[entry]:
                         segment = annotation['milliseconds']
                         if frame_in_msec <= segment[1] and frame_in_msec >= segment[0]:
