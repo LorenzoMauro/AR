@@ -27,9 +27,6 @@ class Dataset:
             self.label_to_id = self.load('label_to_id')
             self.id_to_label = self.load('id_to_label')
             self.number_of_classes = len(self.id_to_label)
-            self.activity_to_id = self.load('activity_to_id')
-            self.id_to_activity = self.load('id_to_activity')
-            self.number_of_activities = len(self.id_to_activity)
             self.frame_now = self.load('frame_label')
             self.train_collection = self.load('train_collection')
             self.test_collection = self.load('test_collection')
@@ -43,7 +40,7 @@ class Dataset:
         self.whole_dataset = Annotation().dataset
         self.label_to_id =  Annotation().label_to_id
         self.id_to_label =  Annotation().id_to_label
-        self.frame_label =  Annotation().frame_label
+        self.frame_label =  Annotation().frames_label
         self.number_of_classes = len(self.id_to_label)
         self.save(self.label_to_id, 'label_to_id')
         self.save(self.id_to_label, 'id_to_label')

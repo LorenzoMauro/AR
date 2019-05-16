@@ -55,11 +55,12 @@ validation_fraction = 0.2
 split_seconds = True
 
 #[Annotation]
-rebuild = False
+rebuild = True
 limit_classes = True
 classes_to_use = ['milk', 'coffee'] # ['friedegg', 'cereals', 'milk']
 ocado_annotation = 'dataset/ocado.json'
-kit_annotation = 'dataset/kit.json'
+kit_activity_annotation = 'dataset/kit_activity.json'
+kit_help_annotation = 'dataset/kit_help.json'
 ocado_path = 'dataset/Video/Ocado'
 kit_path = 'dataset/Video/kit_dataset'
 breakfast_annotation = 'dataset/breakfast.json'

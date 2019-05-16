@@ -2,14 +2,17 @@ import json
 import config
 import os
 import pprint
+from tqdm import tqdm
 pp = pprint.PrettyPrinter(indent=4)
 
 class Annotation:
     def __init__(self):
         if config.dataset is 'Ocado':
-            json_data = open(config.ocado_annotation).read()
-            Dataset = json.loads(json_data)
-            self.dataset, self.frames_label, self.label_to_id, self.id_to_label = self.create_ocado_annotation(Dataset)
+            json_data = open(config.kit_activity_annotation).read()
+            activity_dataset = json.loads(json_data)
+            json_data = open(config.kit_help_annotation).read()
+            help_dataset = json.loads(json_data)
+            self.dataset, self.frames_label, self.label_to_id, self.id_to_label = self.create_ocado_annotation(activity_dataset, help_dataset)
 
     def create_ocado_annotation(self, activity_dataset, help_dataset):
         label_collection = []
@@ -20,7 +23,6 @@ class Annotation:
                     video = cv2.VideoCapture(path)
                     video.set(cv2.CAP_PROP_POS_AVI_RATIO, 2)
                     fps = video.get(cv2.CAP_PROP_FPS)
-                    tot_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
                     for index in range(len(activity_dataset[fl])):
                         label = activity_dataset[fl][index]['label'].split(':')[1].lower()
@@ -34,12 +36,13 @@ class Annotation:
                         help_dataset[fl][index]['label'] = label
                         label_collection.append(label)
 
-        label_to_id, id_to_label = create_labels_mappings(label_collection)
+        label_to_id, id_to_label = self.create_labels_mappings(label_collection)
         frames_label = self.compute_frame_label(activity_dataset, help_dataset, config.kit_path, label_to_id)
 
-        for fl in activity_dataset[fl]:
+        del_fl = []
+        for fl in activity_dataset:
             if fl not in files:
-                del activity_dataset[fl]
+                del_fl.append(fl)
             else:
                 path = root + '/' + fl
                 video = cv2.VideoCapture(path)
@@ -47,18 +50,23 @@ class Annotation:
                 fps = video.get(cv2.CAP_PROP_FPS)
                 tot_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
                 for index in range(len(activity_dataset[fl])):
-                            segment = annotation['milliseconds']
-                            frame_start = int((segment[0]*fps)/1000)
-                            frame_end = int((segment[1]*fps)/1000)
-                            next_collection = []
-                            help_collection = []
-                            for frame in range(frame_start,frame_end):
-                                next_collection.append(frames_label[path][frame]['next'])
-                                help_collection.append(frames_label[path][frame]['help'])
-                            next_label = max(set(next_collection), key=next_collection.count)
-                            help_label = max(set(help_collection), key=help_collection.count)
-                            activity_dataset[fl][index]['next_label'] = next_label
-                            activity_dataset[fl][index]['help'] = help_label
+                    segment = activity_dataset[fl][index]['milliseconds']
+                    frame_start = int((segment[0]*fps)/1000)
+                    frame_end = int((segment[1]*fps)/1000)
+                    next_collection = []
+                    help_collection = []
+                    for frame in range(frame_start,frame_end):
+                        next_collection.append(frames_label[path][frame]['next'])
+                        help_collection.append(frames_label[path][frame]['help'])
+                    next_label = max(set(next_collection), key=next_collection.count)
+                    help_label = max(set(help_collection), key=help_collection.count)
+                    activity_dataset[fl][index]['next_label'] = next_label
+                    activity_dataset[fl][index]['help'] = help_label
+            
+        print(del_fl)
+        print(activity_dataset.keys())
+        for fl in del_fl:
+            del activity_dataset[fl]
 
         return activity_dataset, frames_label, label_to_id, id_to_label
 
@@ -107,9 +115,9 @@ class Annotation:
                     current_label = frames_label[frame]['now']
                     find_next = True
                     next_frame = frame + 1
-                    while True:
+                    while find_next:
                         next_action = frames_label[next_frame]['now']
-                        if next_action != current action:
+                        if next_action != current_label:
                             frames_label[frame]['next'] = next_action
                             find_next = False
                 collection[path] = {}
