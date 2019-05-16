@@ -20,15 +20,15 @@ class Input_manager:
 
             with tf.name_scope("Now_target"):
                 self.labels = tf.placeholder(tf.int32, shape=(None, None, config.seq_len + 1), name="Target")
+                self.help_labels = tf.placeholder(tf.int32, shape=(None, None, 4), name="Target")
                 self.next_labels = tf.placeholder(tf.int32, shape=(None, None), name="next_labels")
-                self.dec_embeddings = tf.Variable(tf.random_uniform([len(IO_tool.dataset.label_to_id), config.decoder_embedding_size]))
+                self.dec_embeddings = tf.Variable(tf.random_uniform([len(IO_tool.dataset.word_to_id), config.decoder_embedding_size]))
             debug_writer = tf.summary.FileWriter("debug", tf.get_default_graph())
 
 class activity_network:
-    def __init__(self, number_of_classes, number_of_activities, Input_manager, device_j, IO_tool):
+    def __init__(self, number_of_classes, Input_manager, device_j, IO_tool):
         self.number_of_classes = number_of_classes
-        self.number_of_activities = number_of_activities
-        self.out_vocab_size = len(IO_tool.dataset.label_to_id)
+        self.out_vocab_size = len(IO_tool.dataset.word_to_id)
 
         with tf.name_scope('Activity_Recognition_Network'):
 
@@ -64,12 +64,19 @@ class activity_network:
 
             with tf.name_scope("Now_Target"):
                 self.labels = tf.squeeze(Input_manager.labels[device_j, :, :])
-                now_dec_input = tf.concat([tf.fill([self.batch_size, 1], IO_tool.dataset.label_to_id['go']), self.labels], 1)
+                now_dec_input = tf.concat([tf.fill([self.batch_size, 1], IO_tool.dataset.word_to_id['go']), self.labels], 1)
                 self.now_one_hot_label= tf.one_hot(self.labels, depth = self.out_vocab_size)
                 now_dec_embed_input = tf.nn.embedding_lookup(Input_manager.dec_embeddings, now_dec_input)
                 now_target_len = tf.ones(shape=(self.batch_size), dtype=tf.int32)*(config.seq_len + 1)
-
             
+            with tf.name_scope("Help_Target"):
+                self.help_labels = tf.squeeze(Input_manager.help_labels[device_j, :, :])
+                self.help_labels.set_shape([None, 4])
+                help_dec_input = tf.concat([tf.fill([self.batch_size, 1], IO_tool.dataset.word_to_id['go']), self.help_labels], 1)
+                self.help_one_hot_label= tf.one_hot(self.help_labels, depth = self.out_vocab_size)
+                help_dec_embed_input = tf.nn.embedding_lookup(Input_manager.dec_embeddings, help_dec_input)
+                help_target_len = tf.ones(shape=(self.batch_size), dtype=tf.int32)*(4)
+
             with tf.name_scope("Next_Target"):
                 self.next_labels = tf.squeeze(Input_manager.next_labels[device_j, :])
                 self.next_one_hot_label= tf.one_hot(self.next_labels, depth = self.out_vocab_size)
@@ -182,14 +189,15 @@ class activity_network:
                 logit = tf.identity(outputs.rnn_output, 'logits')
                 return logit
 
-            with tf.name_scope('Now_Decoder_train'):
+            with tf.name_scope('Now_Decoder_block'):
                 now_decoder, now_output_layer = decoder_lstm(config.lstm_units)
+            with tf.name_scope('Now_Decoder_train'):
                 self.now_logit = train_lstm(encoder_state, now_decoder, now_output_layer, now_dec_embed_input, now_target_len)
                 self.now_softmax, self.now_predictions, self.now_one_hot_prediction = lstm_classifier(self.now_logit)
 
             with tf.name_scope('Now_Decoder_inference'):
-                self.inference_logit = decoding_layer_infer(encoder_state, now_decoder, Input_manager.dec_embeddings, IO_tool.dataset.label_to_id['go'],
-                                                        IO_tool.dataset.label_to_id['end'], config.seq_len +1 , self.out_vocab_size, now_output_layer,
+                self.inference_logit = decoding_layer_infer(encoder_state, now_decoder, Input_manager.dec_embeddings, IO_tool.dataset.word_to_id['go'],
+                                                        IO_tool.dataset.word_to_id['end'], config.seq_len +1 , self.out_vocab_size, now_output_layer,
                                                         self.batch_size)
                 paddings = [[0, 0], [0, (config.seq_len + 1)-tf.shape(self.inference_logit)[1]], [0,0 ]]
                 self.inference_logit = tf.pad(self.inference_logit, paddings, 'CONSTANT', constant_values = 1)
@@ -209,6 +217,26 @@ class activity_network:
                 self.next_softmax = tf.nn.softmax(self.next_logit)
                 self.next_predictions = tf.argmax(input=self.next_softmax, axis=1, name="c3d_prediction")
                 self.next_one_hot_prediction= tf.one_hot(self.next_predictions, depth = self.next_softmax.shape[-1])
+
+            with tf.name_scope('Help_Decoder_block'):
+                help_decoder, help_output_layer = decoder_lstm(config.lstm_units)
+                help_C_composedVec = tf.concat([C_composedVec, self.next_softmax], 1)
+                help_H_composedVec = tf.concat([H_composedVec, self.next_softmax], 1)
+                help_C = tf.layers.dense(help_C_composedVec, config.lstm_units)
+                help_H = tf.layers.dense(help_H_composedVec, config.lstm_units)
+                help_state = tf.contrib.rnn.LSTMStateTuple(help_C, help_H)
+
+            with tf.name_scope('Help_classifier_train'):
+                self.help_logit = train_lstm(help_state, help_decoder, help_output_layer, help_dec_embed_input, help_target_len)
+                self.help_softmax, self.help_predictions, self.help_one_hot_prediction = lstm_classifier(self.help_logit)
+            
+            with tf.name_scope('Help_Decoder_inference'):
+                self.help_inference_logit = decoding_layer_infer(help_state, help_decoder, Input_manager.dec_embeddings, IO_tool.dataset.word_to_id['go'],
+                                                        IO_tool.dataset.word_to_id['end'], 4 , self.out_vocab_size, help_output_layer,
+                                                        self.batch_size)
+                paddings = [[0, 0], [0, 4-tf.shape(self.help_inference_logit)[1]], [0,0 ]]
+                self.help_inference_logit = tf.pad(self.help_inference_logit, paddings, 'CONSTANT', constant_values = 1)
+                self.help_inference_softmax, self.help_inference_predictions, self.help_inference_one_hot_prediction = lstm_classifier(self.help_inference_logit)  
             
             def c3d_classifier_dense(x):
                 with tf.variable_scope("c3d_classifier_dense", reuse=tf.AUTO_REUSE):
@@ -263,6 +291,13 @@ class Training:
                         next_pred_conc = Networks[Net].next_one_hot_prediction
                         now_label_conc = Networks[Net].now_one_hot_label
                         next_label_conc = Networks[Net].next_one_hot_label
+                        help_pred_conc = Networks[Net].help_one_hot_prediction
+                        help_inf_pred_conc = Networks[Net].help_inference_one_hot_prediction
+                        help_label_conc = Networks[Net].help_one_hot_label
+                        predictions_c3d_conc = Networks[Net].predictions_c3d
+                        predictions_now_conc = Networks[Net].now_predictions
+                        predictions_help_conc = Networks[Net].help_predictions
+                        predictions_next_conc = Networks[Net].next_predictions
                         z +=1
                     else:
                         c3d_pred_conc = tf.concat([c3d_pred_conc, Networks[Net].c3d_one_hot_prediction], axis=0)
@@ -271,13 +306,21 @@ class Training:
                         next_pred_conc = tf.concat([next_pred_conc, Networks[Net].next_one_hot_prediction], axis=0)
                         now_label_conc = tf.concat([now_label_conc, Networks[Net].now_one_hot_label], axis=0)
                         next_label_conc = tf.concat([next_label_conc, Networks[Net].next_one_hot_label], axis=0)
+                        help_pred_conc = tf.concat([help_pred_conc, Networks[Net].help_one_hot_prediction], axis=0)
+                        help_inf_pred_conc = tf.concat([help_inf_pred_conc, Networks[Net].help_inference_one_hot_prediction], axis=0)
+                        help_label_conc = tf.concat([help_label_conc, Networks[Net].help_one_hot_label], axis=0)
+                        predictions_c3d_conc = tf.concat([predictions_c3d_conc,Networks[Net].predictions_c3d], axis=0)
+                        predictions_now_conc = tf.concat([predictions_now_conc,Networks[Net].now_predictions], axis=0)
+                        predictions_help_conc = tf.concat([predictions_help_conc,Networks[Net].help_predictions], axis=0)
+                        predictions_next_conc = tf.concat([predictions_next_conc,Networks[Net].next_predictions], axis=0)
 
                 with tf.name_scope('Metrics_calculation'):
                     c3d_precision, c3d_recall, c3d_f1, c3d_accuracy = self.accuracy_metrics(c3d_pred_conc, now_label_conc[:,:-1,:])
                     now_precision, now_recall, now_f1, now_accuracy = self.accuracy_metrics(now_pred_conc, now_label_conc)
-                    # inference_precision, inference_recall, inference_f1, inference_accuracy = self.accuracy_metrics(now_inf_pred_conc[:,:config.seq_len + 1,:], now_label_conc)
                     inference_precision, inference_recall, inference_f1, inference_accuracy = self.accuracy_metrics(now_inf_pred_conc, now_label_conc)
                     next_precision, next_recall, next_f1, next_accuracy = self.accuracy_metrics(next_pred_conc, next_label_conc)
+                    help_precision, help_recall, help_f1, help_accuracy = self.accuracy_metrics(help_pred_conc, help_label_conc)
+                    help_inference_precision, help_inference_recall, help_inference_f1, inference_accuracy = self.accuracy_metrics(help_inf_pred_conc, help_label_conc)
 
             with tf.name_scope('Loss'):
                 for Net in Networks:
@@ -291,6 +334,10 @@ class Training:
                             cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label, logits=Networks[Net].now_logit)
                             now_loss = tf.reduce_sum(cross_entropy_Now_vec)
 
+                        with tf.name_scope("help_Loss"):
+                            cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].help_one_hot_label, logits=Networks[Net].help_logit)
+                            help_loss = tf.reduce_sum(cross_entropy_help_vec)
+
                         with tf.name_scope("Next_Loss"):
                             cross_entropy_Next_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].next_one_hot_label, logits=Networks[Net].next_logit)
                             next_loss = tf.reduce_sum(cross_entropy_Next_vec)
@@ -303,19 +350,22 @@ class Training:
                             now_loss_sum = now_loss
                             next_loss_sum = next_loss
                             auto_enc_loss_sum = auto_enc_loss
+                            help_loss_sum = help_loss
                             z += 1
                         else:
                             c3d_loss_sum += c3d_loss
                             now_loss_sum += now_loss
                             next_loss_sum += next_loss
                             auto_enc_loss_sum += auto_enc_loss
+                            help_loss_sum += help_loss
 
                 with tf.name_scope("Global_Loss"):
                     c3d_loss_sum = tf.cast(c3d_loss_sum, tf.float64)
                     now_loss_sum = tf.cast(now_loss_sum, tf.float64)
                     next_loss_sum = tf.cast(next_loss_sum, tf.float64)
                     auto_enc_loss_sum = tf.cast(auto_enc_loss_sum, tf.float64)
-                    total_loss = (c3d_recall)*(now_recall*next_loss_sum + (1-now_recall)*now_loss_sum) + (1 - c3d_recall) * c3d_loss_sum + auto_enc_loss_sum
+                    help_loss_sum = tf.cast(help_loss_sum, tf.float64)
+                    total_loss = (c3d_recall)*(now_recall*(next_recall*help_loss_sum + (1-next_recall)*next_loss_sum) + (1-now_recall)*now_loss_sum) + (1 - c3d_recall) * c3d_loss_sum + auto_enc_loss_sum
 
             with tf.name_scope("Optimizer"):
                 Train_variable = [v for v in self.variables if 'Openpose' not in v.name.split('/')[0]]
@@ -333,40 +383,28 @@ class Training:
                     variables=Train_variable)
 
             with tf.name_scope('Summary'):
-                j = 0
-                for Net in Networks:
-                    if j == 0:
-                        conc_predictions_c3d = Networks[Net].predictions_c3d
-                        conc_predictions_now = Networks[Net].now_predictions
-                        conc_predictions_next = Networks[Net].next_predictions
-                        conc_now_labels = Networks[Net].now_one_hot_label
-                        conc_next_labels = Networks[Net].next_one_hot_label
-                    else:
-                        conc_predictions_c3d = tf.concat([conc_predictions_c3d,Networks[Net].predictions_c3d], axis=0)
-                        conc_predictions_now = tf.concat([conc_predictions_now,Networks[Net].now_predictions], axis=0)
-                        conc_predictions_next = tf.concat([conc_predictions_next,Networks[Net].next_predictions], axis=0)
-                        conc_now_labels = tf.concat([conc_now_labels,Networks[Net].now_one_hot_label], axis=0)
-                        conc_next_labels = tf.concat([conc_next_labels,Networks[Net].next_one_hot_label], axis=0)
-                    j += 1
-
-
                 # tf.summary.histogram("c_out", self.c_out)
                 # tf.summary.histogram("h_out", self.h_out)
                 # tf.summary.histogram("c_in", self.c_input)
                 # tf.summary.histogram("h_in", self.h_input)
                 # # tf.summary.histogram("labels_target", argmax_labels)
-                tf.summary.histogram("Now_classification", conc_predictions_now)
-                tf.summary.histogram("Next_classification", conc_predictions_next)
-                tf.summary.histogram("c3d_classification", conc_predictions_c3d)
+                tf.summary.histogram("Now_classification", predictions_now_conc)
+                tf.summary.histogram("Help_classification", predictions_help_conc)
+                tf.summary.histogram("Next_classification", predictions_next_conc)
+                tf.summary.histogram("c3d_classification", predictions_c3d_conc)
                 tf.summary.histogram("Now_label", tf.argmax(input=now_label_conc, axis=-1))
+                tf.summary.histogram("Help_label", tf.argmax(input=help_label_conc, axis=-1))
                 tf.summary.histogram("Next_label", tf.argmax(input=next_label_conc, axis=-1))
                 tf.summary.scalar('Lstm_loss', now_loss_sum)
                 tf.summary.scalar('auto_enc_loss_sum', auto_enc_loss_sum)
                 tf.summary.scalar('C3d_Loss', c3d_loss_sum)
                 tf.summary.scalar('Now_Loss', now_loss_sum)
+                tf.summary.scalar('help_Loss', help_loss_sum)
                 tf.summary.scalar('Next_Loss', next_loss_sum)
                 tf.summary.scalar('now_recall', now_recall)
                 tf.summary.scalar('now_inference_recall', inference_recall)
+                tf.summary.scalar('help_recall', help_recall)
+                tf.summary.scalar('help_inference_recall', help_inference_recall)
                 tf.summary.scalar('next_recall', next_recall)
                 tf.summary.scalar('c3d_recall', c3d_recall)
                 self.merged = tf.summary.merge_all()

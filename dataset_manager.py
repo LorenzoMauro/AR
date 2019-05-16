@@ -9,6 +9,7 @@ import pickle
 import config
 from annotation_generator import Annotation
 import numpy as np
+import copy
 
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -22,11 +23,15 @@ class Dataset:
                 os.path.isfile('dataset/ordered_collection.pkl') and
                 os.path.isfile('dataset/label_to_id.pkl') and
                 os.path.isfile('dataset/id_to_label.pkl') and
+                os.path.isfile('dataset/word_to_id.pkl') and
+                os.path.isfile('dataset/id_to_word.pkl') and
                 not config.rebuild):
 
             self.label_to_id = self.load('label_to_id')
             self.id_to_label = self.load('id_to_label')
-            self.number_of_classes = len(self.id_to_label)
+            self.word_to_id = self.load('label_to_id')
+            self.id_to_word = self.load('id_to_label')
+            self.number_of_classes = len(self.word_to_id)
             self.frame_now = self.load('frame_label')
             self.train_collection = self.load('train_collection')
             self.test_collection = self.load('test_collection')
@@ -34,62 +39,57 @@ class Dataset:
         else:
             self.generate_dataset()
 
-        pp.pprint(self.id_to_label)
-
     def generate_dataset(self):
-        self.whole_dataset = Annotation().dataset
-        self.label_to_id =  Annotation().label_to_id
-        self.id_to_label =  Annotation().id_to_label
-        self.frame_label =  Annotation().frames_label
-        self.number_of_classes = len(self.id_to_label)
+        annotation = Annotation()
+        self.whole_dataset = annotation.dataset
+        self.label_to_id =  annotation.label_to_id
+        self.id_to_label =  annotation.id_to_label
+        self.frame_label =  annotation.frames_label
+        self.word_to_id, self.id_to_word = self.create_labels_mappings_network(self.label_to_id)
+        self.number_of_classes = len(self.word_to_id)
         self.save(self.label_to_id, 'label_to_id')
         self.save(self.id_to_label, 'id_to_label')
+        self.save(self.word_to_id, 'word_to_id')
+        self.save(self.id_to_word, 'id_to_word')
         self.save(self.frame_label, 'frame_label')
         self.validation_fraction = config.validation_fraction
-        if not config.split_seconds:
-            self.Train_dataset, self.Val_dataset = self.split_dataset()
-            self.train_collection,self.ordered_collection, self.train_multi_list, self.train_couple_count, self.max_history= self.new_collection(self.Train_dataset)
-            self.test_collection,self.ordered_collection, self.test_multi_list, self.test_couple_count, self.max_history_val = self.new_collection(self.Val_dataset)
-            if self.max_history_val > self.max_history:
-                self.max_history = self.max_history_val
-        else:
-            self.collection, self.ordered_collection, self.multi_list, self.couple_count, self.max_history= self.new_collection(self.whole_dataset)
+        self.collection, self.ordered_collection, self.multi_list, self.couple_count, self.max_history= self.new_collection(self.whole_dataset)
+        non_zero_division = False
+        while not non_zero_division:
             self.train_collection, self.test_collection = self.split_dataset_second(self.collection)
-
+            non_zero_division = True
+            for now in self.train_collection.keys():
+                for next in self.train_collection[now].keys():
+                    for help in self.train_collection[now][next].keys():
+                        if len(self.train_collection[now][next][help]) == 0:
+                            non_zero_division = False
+        self.save(self.test_collection, 'test_collection')
         self.save(self.train_collection, 'train_collection')
         self.save(self.test_collection, 'test_collection')
         self.save(self.ordered_collection, 'ordered_collection')
+        pp.pprint(self.id_to_label)
+        pp.pprint(self.id_to_word)
 
-    def split_dataset(self):
-        dataset_train = self.whole_dataset
-        validation = {}
-        random.seed(time.time())
-        entry_val = int(len(self.whole_dataset) * self.validation_fraction)
-        for i in range(entry_val):
-            entry_name = random.choice(list(dataset_train.keys()))
-            validation[entry_name] = dataset_train[entry_name]
-            self.whole_dataset.pop(entry_name)
-        return dataset_train, validation
-
-    def split_dataset_second(self, dataset):
+    def split_dataset_second(self, collection):
+        dataset = copy.deepcopy(collection)
         validation = {}
         random.seed(time.time())
         entry_val = int(len(self.whole_dataset) * self.validation_fraction)
         for i in range(entry_val):
             if config.balance_key == 'all':
-                r_activity = random.choice(list(dataset.keys()))
-                r_now = random.choice(list(dataset[r_activity].keys()))
-                r_next = random.choice(list(dataset[r_activity][r_now].keys()))
-                r_index = random.randrange(len(dataset[r_activity][r_now][r_next]))
-                entry = dataset[r_activity][r_now][r_next][r_index]
-                if r_activity not in validation:
-                    validation[r_activity] = {}
-                if r_now not in validation[r_activity]:
-                    validation[r_activity][r_now] = {}
-                if r_next not in validation[r_activity][r_now]:
-                    validation[r_activity][r_now][r_next] = []
-                validation[r_activity][r_now][r_next].append(entry)
-                del dataset[r_activity][r_now][r_next][r_index]
+                r_now = random.choice(list(dataset.keys()))
+                r_next = random.choice(list(dataset[r_now].keys()))
+                r_help = random.choice(list(dataset[r_now][r_next].keys()))
+                r_index = random.randrange(len(dataset[r_now][r_next][r_help]))
+                entry = dataset[r_now][r_next][r_help][r_index]
+                if r_now not in validation:
+                    validation[r_now] = {}
+                if r_next not in validation[r_now]:
+                    validation[r_now][r_next] = {}
+                if r_help not in validation[r_now][r_next]:
+                    validation[r_now][r_next][r_help] = []
+                validation[r_now][r_next][r_help].append(entry)
+                del dataset[r_now][r_next][r_help][r_index]
             else:
                 random_couple = random.choice(list(dataset))
                 r_index = random.randrange(len(dataset[random_couple]))
@@ -100,91 +100,24 @@ class Dataset:
                 del dataset[random_couple][r_index]
         return dataset, validation
 
-    def create_labels_mappings(self):
-        label_to_id = {}
-        id_to_label = {}
-        label_to_id['sil'] = 0
-        id_to_label[0] = 'sil'
-        label_to_id['go'] = 1
-        id_to_label[1] = 'go'
-        label_to_id['end'] = 2
-        id_to_label[2] = 'end'
+    def create_labels_mappings_network(self, label_to_id):
+        word_to_id = {}
+        id_to_word = {}
+        word_to_id['sil'] = 0
+        id_to_word[0] = 'sil'
+        word_to_id['go'] = 1
+        id_to_word[1] = 'go'
+        word_to_id['end'] = 2
+        id_to_word[2] = 'end'
         i = 3
-        for video_name in self.whole_dataset:
-            for segment in self.whole_dataset[video_name]:
-                label = segment['label'].lower()
-                if label not in label_to_id:
-                    label_to_id[label] = i
-                    id_to_label[i] = label
+        for label in label_to_id.keys():
+            label = label.split(' ')
+            for word in label:
+                if word not in word_to_id:
+                    word_to_id[word] = i
+                    id_to_word[i] = word
                     i += 1
-        return label_to_id, id_to_label
-
-    def create_activity_mappings(self):
-        activity_to_id = {}
-        id_to_activity = {}
-        activity_to_id['sil'] = 0
-        id_to_activity[0] = 'sil'
-        i = 1
-        for video_name in self.whole_dataset:
-            for segment in self.whole_dataset[video_name]:
-                activity = segment['activity'].lower()
-                if activity not in activity_to_id:
-                    activity_to_id[activity] = i
-                    id_to_activity[i] = activity
-                    i += 1
-        return activity_to_id, id_to_activity
-
-    def compute_frame_label(self, dataset, next):
-        collection = {}
-        iter_count = 0
-        files_path = {}
-        for root, dirs, files in os.walk('dataset'):
-            for fl in files:
-                path = root + '/' + fl
-                if path in dataset.keys():
-                    files_path[path] = path
-                elif fl in dataset.keys():
-                    files_path[fl] = path
-
-        pbar = tqdm(total=(len(files_path)), leave=False, desc='Generating Frame')
-
-        for entry in files_path:
-            path = files_path[entry]
-            video = cv2.VideoCapture(path)
-            video.set(cv2.CAP_PROP_POS_AVI_RATIO, 2)
-            fps = video.get(cv2.CAP_PROP_FPS)
-            tot_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-            if tot_frames is 0:
-                continue
-            frames_label = {}
-            for frame in range(1, tot_frames):
-                frame_in_msec = (frame / float(fps)) * 1000
-                label = 'sil'
-                labels = {'now': self.label_to_id[label], 'next': self.label_to_id[label], 'activity': self.activity_to_id[label]}
-                for annotation in dataset[entry]:
-                    segment = annotation['milliseconds']
-                    if frame_in_msec <= segment[1] and frame_in_msec >= segment[0]:
-                        if annotation['label'] in list(self.label_to_id.keys()):
-                            labels['now'] = self.label_to_id[annotation['label']]
-                        if annotation['next_label'] in self.label_to_id.keys():
-                            labels['next'] = self.label_to_id[annotation['next_label']]
-                        if annotation['activity'] in self.activity_to_id.keys():
-                            labels['activity'] = self.activity_to_id[annotation['activity']]
-                        break
-                frames_label[frame] = labels
-            for frame in range(1, tot_frames):
-                if frames_label[frame]['now'] == 0:
-                    for follow_frame in range(frame + 1, tot_frames):
-                        if frames_label[follow_frame]['now'] == 0:
-                            pass
-                        if frames_label[follow_frame]['now'] != 0:
-                            frames_label[frame]['next'] = frames_label[follow_frame]['now']
-                            break
-            collection[path] = {}
-            collection[path] = frames_label
-            pbar.update(1)
-        pbar.close()
-        return collection
+        return word_to_id, id_to_word
 
     def new_collection(self, dataset):
         collection = {}
@@ -207,6 +140,7 @@ class Dataset:
         max_history = 0
         for entry in files_path:
             path = files_path[entry]
+            path = path.replace('\\', '/')
             video = cv2.VideoCapture(path)
             video.set(cv2.CAP_PROP_POS_AVI_RATIO, 1)
             fps = video.get(cv2.CAP_PROP_FPS)
@@ -215,8 +149,6 @@ class Dataset:
             label_history = []
             if tot_steps is 0:
                 break
-            step_label = {}
-            not_zero = False
             for step in range(tot_steps):
                 max_frame = int((step+1)*config.window_size*fps)+1
                 if max_frame > tot_frames:
@@ -225,7 +157,7 @@ class Dataset:
                 segment = [frame_list[0], frame_list[-1]]
                 current_label = self.label_calculator(frame_list, path, 'now')
                 next_label = self.label_calculator(frame_list, path, 'next')
-                activity = self.label_calculator(frame_list, path, 'activity')
+                help_label = self.label_calculator(frame_list, path, 'help')
                 # if current_label == 0:
                     # continue
                 if len(label_history) == 0:
@@ -256,7 +188,7 @@ class Dataset:
 
 
                 entry = {'now_label' : current_label, 'next_label' : next_label, 'all_next_label' : couple,
-                         'path': path, 'segment':segment, 'history':label_history, 'activity': activity, 'time_step': step}
+                         'path': path, 'segment':segment, 'history':label_history, 'time_step': step, 'help': help_label}
                 if path not in ordered_collection:
                     ordered_collection[path] = {}
                 ordered_collection[path][step] = entry
@@ -273,13 +205,13 @@ class Dataset:
                     else:
                         collection[balance].append(entry)
                 elif config.balance_key == 'all':
-                    if activity not in collection:
-                        collection[activity] = {}
-                    if current_label not in collection[activity]:
-                        collection[activity][current_label] = {}
-                    if next_label not in collection[activity][current_label]:
-                        collection[activity][current_label][next_label] = []
-                    collection[activity][current_label][next_label].append(entry)
+                    if current_label not in collection:
+                        collection[current_label] = {}
+                    if next_label not in collection[current_label]:
+                        collection[current_label][next_label] = {}
+                    if help_label not in collection[current_label][next_label]:
+                        collection[current_label][next_label][help_label] = []
+                    collection[current_label][next_label][help_label].append(entry)
 
             pbar.update(1)
         for x in collection:

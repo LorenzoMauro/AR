@@ -20,7 +20,6 @@ class IO_manager:
     def __init__(self, sess):
         self.dataset = Dataset()
         self.num_classes = self.dataset.number_of_classes
-        self.num_activities = self.dataset.number_of_activities
         self.sess = sess
         self.openpose = None
         self.snow_ball_minimum = config.snow_ball_classes
@@ -41,16 +40,17 @@ class IO_manager:
 
     def compute_batch(self, pbar, Devices, Train, augment=True):
         def multiprocess_batch(x):
-            X, Y, c, h, video_name_collection, segment_collection, next_label= self.batch_generator(pbar, Train)
+            X, Y, c, h, video_name_collection, segment_collection, next_label, help_label= self.batch_generator(pbar, Devices, Train)
             return {'X': X, 'Y': Y, 'c': c, 'h': h,
                     'next_Y': next_label,
+                    'help_Y': help_label,
                     'video_name_collection': video_name_collection,
                     'segment_collection': segment_collection}
 
         pool = mp.Pool(processes=config.processes)
-        ready_batch = pool.map(multiprocess_batch, range(0, config.tasks*Devices))
+        ready_batch = pool.map(multiprocess_batch, range(0, config.tasks))
         ready_batch = self.add_pose(ready_batch, self.sess, augment)
-        ready_batch = self.group_batches(ready_batch, Devices, pbar)
+        # ready_batch = self.group_batches(ready_batch, Devices, pbar)
         pbar.close()
         pool.close()
         pool.join()
@@ -94,15 +94,16 @@ class IO_manager:
             pbar.update(1)
         return new_collection
 
-    def batch_generator(self, pbar, Train=True):
+    def batch_generator(self, pbar, Devices, Train=True):
         random.seed(time.time())
-        segment_collection = []
-        video_name_collection = []
-        batch = np.zeros(shape=(config.Batch_size, config.seq_len, config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=np.uint8)
-        labels = np.zeros(shape=(config.Batch_size,config.seq_len + 1), dtype=int)
-        next_labels = np.zeros(shape=(config.Batch_size), dtype=int)
-        c = np.zeros(shape=(len(config.encoder_lstm_layers), config.Batch_size, config.hidden_states_dim), dtype=float)
-        h = np.zeros(shape=(len(config.encoder_lstm_layers), config.Batch_size, config.hidden_states_dim), dtype=float)
+        batch_segment_collection = []
+        batch_video_name_collection = []
+        batch = np.zeros(shape=(Devices, config.Batch_size, config.seq_len, config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=np.uint8)
+        labels = np.zeros(shape=(Devices, config.Batch_size,config.seq_len + 1), dtype=int)
+        help_labels = np.zeros(shape=(Devices, config.Batch_size, 4), dtype=int)
+        next_labels = np.zeros(shape=(Devices, config.Batch_size), dtype=int)
+        c = np.zeros(shape=(Devices, len(config.encoder_lstm_layers), config.Batch_size, config.hidden_states_dim), dtype=float)
+        h = np.zeros(shape=(Devices, len(config.encoder_lstm_layers), config.Batch_size, config.hidden_states_dim), dtype=float)
 
         # Selecting correct dataset
         if Train:
@@ -112,41 +113,61 @@ class IO_manager:
         ordered_collection = self.dataset.ordered_collection
 
         j = 0
-        while j < config.Batch_size:
-            entry_list = self.entry_selector(dataset,ordered_collection, config.is_ordered)
-            s = 0
-            for entry in entry_list:
-                current_label = entry['now_label']
-                next_label = entry['next_label']
-                path = entry['path']
-                segment = entry['segment']
-                one_input, frame_list = self.extract_one_input(path, segment, pbar)
-                config.snow_ball_step_count += 1
+        d = 0
+        while d < Devices:
+            segment_collection = []
+            video_name_collection = []
+            while j < config.Batch_size:
+                entry_list = self.entry_selector(dataset,ordered_collection, config.is_ordered)
+                s = 0
+                for entry in entry_list:
+                    current_label = entry['now_label']
+                    current_label = self.dataset.word_to_id[self.dataset.id_to_label[current_label]]
+                    next_label = entry['next_label']
+                    next_label = self.dataset.word_to_id[self.dataset.id_to_label[next_label]]
+                    path = entry['path']
+                    segment = entry['segment']
+                    help_label = entry['help']
+                    help_label = self.dataset.id_to_label[help_label].split(' ')
+                    one_input, frame_list = self.extract_one_input(path, segment, pbar)
+                    config.snow_ball_step_count += 1
 
-                
-                batch[j, s, :, :, :, :] = one_input
-                labels[j, s] = current_label
-                next_labels[j] = next_label
+                    
+                    batch[d, j, s, :, :, :, :] = one_input
+                    labels[d, j, s] = current_label
 
-                if s == 0:
-                    if path in self.hidden_states_collection:
-                        start_frame = segment[0] - 1
-                        if start_frame in self.hidden_states_collection[path].keys():
-                            c[:, j, :] = self.hidden_states_collection[path][start_frame]['c']
-                            h[:, j, :] = self.hidden_states_collection[path][start_frame]['h']
 
-                if s == config.seq_len - 1:
-                    segment_collection.append(segment)
-                    video_name_collection.append(path)
+                    if s == 0:
+                        if path in self.hidden_states_collection:
+                            start_frame = segment[0] - 1
+                            if start_frame in self.hidden_states_collection[path].keys():
+                                c[d, :, j, :] = self.hidden_states_collection[path][start_frame]['c']
+                                h[d, :, j, :] = self.hidden_states_collection[path][start_frame]['h']
 
-                s = s + 1
-            labels[j, s] = self.dataset.label_to_id['end']
-            j = j + 1
+                    if s == config.seq_len - 1:
+                        segment_collection.append(segment)
+                        video_name_collection.append(path)
+                        next_labels[d, j] = next_label
+                        for n in range(2):
+                            if n > len(help_label) - 1:
+                                help_label_step = self.dataset.word_to_id['sil']
+                            else:
+                                help_label_step = self.dataset.word_to_id[help_label[n]]
+                            help_labels[d, j, n] = help_label_step
+                        help_labels[d, j, 3] = self.dataset.word_to_id['end']
+                        
+
+                    s = s + 1
+                labels[d, j, s] = self.dataset.word_to_id['end']
+                j = j + 1
+            batch_video_name_collection.append(video_name_collection)
+            batch_segment_collection.append(segment_collection)
+            d = d + 1
 
         # pp.pprint(history)
         pbar.update(1)
         pbar.refresh()
-        return batch, labels, c, h, video_name_collection, segment_collection, next_labels,
+        return batch, labels, c, h, batch_video_name_collection, batch_segment_collection, next_labels, help_labels
 
     def entry_selector(self, dataset,ordered_collection, is_ordered):
         random.seed(time.time())
@@ -154,26 +175,17 @@ class IO_manager:
         # start from first seq_len segment : to be improved
         while time_step <= config.seq_len:
             if config.balance_key == 'all':
-                r_activity = random.choice(list(dataset.keys()))
-                r_now = random.choice(list(dataset[r_activity].keys()))
-                r_next = random.choice(list(dataset[r_activity][r_now].keys()))
-                entry = random.choice(dataset[r_activity][r_now][r_next])
+                r_now = random.choice(list(dataset.keys()))
+                r_next = random.choice(list(dataset[r_now].keys()))
+                r_help = random.choice(list(dataset[r_now][r_next].keys()))
+                try:
+                    entry = random.choice(dataset[r_now][r_next][r_help])
+                except Exception as e:
+                    print(self.dataset.id_to_label[r_now], self.dataset.id_to_label[r_next], self.dataset.id_to_label[r_help])
+                    print(r_now, r_next, r_help)
+                    print(dataset[r_now][r_next][r_help])
+                    pass
                 time_step = entry['time_step']
-
-                if r_activity not in self.chosen_label['activity']:
-                    self.chosen_label['activity'][r_activity] = 1
-                else:
-                    self.chosen_label['activity'][r_activity] += 1
-
-                if r_next not in self.chosen_label['next']:
-                    self.chosen_label['next'][r_next] = 1
-                else:
-                    self.chosen_label['next'][r_next] += 1
-
-                if r_now not in self.chosen_label['now']:
-                    self.chosen_label['now'][r_now] = 1
-                else:
-                    self.chosen_label['now'][r_now] += 1
             else:
                 random_couple = random.choice(list(dataset))
                 entry = random.choice(dataset[random_couple])
@@ -291,7 +303,7 @@ class IO_manager:
 
     def add_pose(self, X, sess, augment=True):
         shape = (X[0])['X'].shape
-        total = len(X) * shape[0] * shape[1]* shape[2]
+        total = len(X) * shape[0] * shape[1]* shape[2]* shape[2]
         augment = 'none'
         if augment:
             augment = random.choice(['none', 'horizzontal', 'vertical', 'both'])
@@ -299,25 +311,26 @@ class IO_manager:
         for k in range(len(X)):
             X_data = (X[k])['X']
             shape = X_data.shape
-            shrinked_X = np.zeros(shape=(shape[0],shape[1], shape[2], config.out_H, config.out_W, shape[5]), dtype=np.uint8)
-            for i in range(shape[0]):
-                for j in range(shape[1]):
-                    for z in range(shape[2]):
-                        try:
-                            X_Data = X_data[i, j, z, :, :, :3].astype(np.uint8)
-                            pafMat, heatMat = self.openpose.compute_pose_frame(X_Data)
-                            heatMat = heatMat.astype(np.uint8)
-                            pafMat = pafMat.astype(np.uint8)
-                            X_data[i, j, z, :, :, 3] = heatMat
-                            X_data[i, j, z, :, :, 4] = pafMat
-                            final_frame = X_data[i, j, z, :, :, :]
-                            shrinked_frame = cv2.resize(final_frame, dsize=(config.out_H, config.out_W), interpolation=cv2.INTER_CUBIC)
-                            shrinked_frame = self.augment_data(shrinked_frame, augment)
-                            shrinked_X[i, j, z, :, :, :] = shrinked_frame
-                            pbar.update(1)
-                        except Exception as e:
-                            print(e)
-                            pass
+            shrinked_X = np.zeros(shape=(shape[0], shape[1], shape[2], shape[3], config.out_H, config.out_W, shape[6]), dtype=np.uint8)
+            for d in range(shape[0]):
+                for i in range(shape[1]):
+                    for j in range(shape[2]):
+                        for z in range(shape[3]):
+                            try:
+                                X_Data = X_data[d, i, j, z, :, :, :3].astype(np.uint8)
+                                pafMat, heatMat = self.openpose.compute_pose_frame(X_Data)
+                                heatMat = heatMat.astype(np.uint8)
+                                pafMat = pafMat.astype(np.uint8)
+                                X_data[d, i, j, z, :, :, 3] = heatMat
+                                X_data[d, i, j, z, :, :, 4] = pafMat
+                                final_frame = X_data[d, i, j, z, :, :, :]
+                                shrinked_frame = cv2.resize(final_frame, dsize=(config.out_H, config.out_W), interpolation=cv2.INTER_CUBIC)
+                                shrinked_frame = self.augment_data(shrinked_frame, augment)
+                                shrinked_X[d, i, j, z, :, :, :] = shrinked_frame
+                                pbar.update(1)
+                            except Exception as e:
+                                print(e)
+                                pass
             if config.show_pic:
                 self.show_input_pic(X_data)
             X[k]['X'] = shrinked_X

@@ -5,7 +5,7 @@ allow_growth = True
 
 #[Train]
 c3d_ucf_weights = "sports1m_finetuning_ucf101.model"
-Batch_size = 2
+Batch_size = 10
 frames_per_step = 6
 window_size = 1
 load_previous_weigth = False
@@ -60,6 +60,7 @@ limit_classes = True
 classes_to_use = ['milk', 'coffee'] # ['friedegg', 'cereals', 'milk']
 ocado_annotation = 'dataset/ocado.json'
 kit_activity_annotation = 'dataset/kit_activity.json'
+kit_help_annotation_temp = 'dataset/kit_help_temp.json'
 kit_help_annotation = 'dataset/kit_help.json'
 ocado_path = 'dataset/Video/Ocado'
 kit_path = 'dataset/Video/kit_dataset'

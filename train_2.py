@@ -64,7 +64,6 @@ def train():
     with tf.Session(config=tf_config) as sess:
         IO_tool = IO_manager(sess)
         number_of_classes = IO_tool.num_classes
-        number_of_activities = IO_tool.num_activities
         available_gpus = get_available_gpus()
         j=0
         Net_collection = {}
@@ -75,7 +74,7 @@ def train():
                 with tf.variable_scope('Network') as scope:
                     if j>0:
                         scope.reuse_variables()
-                    Net_collection['Network_' + str(j)] = activity_network(number_of_classes, number_of_activities, Input_net, j, IO_tool)
+                    Net_collection['Network_' + str(j)] = activity_network(number_of_classes, Input_net, j, IO_tool)
                     j = j+1
         # with tf.device(available_gpus[-1].name):
         Train_Net = Training(Net_collection)
@@ -116,6 +115,7 @@ def train():
                                                                                             Train_Net.c_out_list, Train_Net.h_out_list],
                                                                                             feed_dict={Input_net.input_batch: batch['X'],
                                                                                                         Input_net.labels: batch['Y'],
+                                                                                                        Input_net.help_labels: batch['help_Y'],
                                                                                                         Input_net.c_input: batch['c'],
                                                                                                         Input_net.h_input: batch['h'],
                                                                                                         Input_net.next_labels: batch['next_Y']})
@@ -160,6 +160,7 @@ def train():
                                                                                                 Train_Net.c_out_list, Train_Net.h_out_list],
                                                                                                 feed_dict={Input_net.input_batch: batch['X'],
                                                                                                             Input_net.labels: batch['Y'],
+                                                                                                            Input_net.help_labels: batch['help_Y'],
                                                                                                             Input_net.c_input: batch['c'],
                                                                                                             Input_net.h_input: batch['h'],
                                                                                                             Input_net.next_labels: batch['next_Y']})
