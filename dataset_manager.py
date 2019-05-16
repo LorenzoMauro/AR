@@ -75,11 +75,14 @@ class Dataset:
         validation = {}
         random.seed(time.time())
         entry_val = int(len(self.whole_dataset) * self.validation_fraction)
-        for i in range(entry_val):
+        i = 0
+        while i < entry_val:
             if config.balance_key == 'all':
                 r_now = random.choice(list(dataset.keys()))
                 r_next = random.choice(list(dataset[r_now].keys()))
                 r_help = random.choice(list(dataset[r_now][r_next].keys()))
+                if len(dataset[r_now][r_next][r_help])< 2:
+                    continue
                 r_index = random.randrange(len(dataset[r_now][r_next][r_help]))
                 entry = dataset[r_now][r_next][r_help][r_index]
                 if r_now not in validation:
@@ -98,6 +101,7 @@ class Dataset:
                     validation[random_couple] = []
                 validation[random_couple].append(entry)
                 del dataset[random_couple][r_index]
+            i = i + 1
         return dataset, validation
 
     def create_labels_mappings_network(self, label_to_id):
