@@ -306,12 +306,12 @@ class IO_manager:
         total = len(X) * shape[0] * shape[1]* shape[2]* shape[2]
         augment = 'none'
         if augment:
-            augment = random.choice(['none', 'horizzontal', 'vertical', 'both'])
+            augment = random.choice(['none', 'horizzontal', 'vertical', 'both'])   
         pbar = tqdm(total=total, leave=False, desc='Computing Poses')
-        for k in range(len(X)):
+        for k in range(len(X)): 
             X_data = (X[k])['X']
             shape = X_data.shape
-            shrinked_X = np.zeros(shape=(shape[0], shape[1], shape[2], shape[3], config.out_H, config.out_W, shape[6]), dtype=np.uint8)
+            shrinked_X = np.zeros(shape=(shape[0], shape[1], shape[2], shape[3], config.out_H, config.out_W, 7), dtype=np.uint8)
             for d in range(shape[0]):
                 for i in range(shape[1]):
                     for j in range(shape[2]):
@@ -321,12 +321,14 @@ class IO_manager:
                                 pafMat, heatMat = self.openpose.compute_pose_frame(X_Data)
                                 heatMat = heatMat.astype(np.uint8)
                                 pafMat = pafMat.astype(np.uint8)
-                                X_data[d, i, j, z, :, :, 3] = heatMat
-                                X_data[d, i, j, z, :, :, 4] = pafMat
-                                final_frame = X_data[d, i, j, z, :, :, :]
-                                shrinked_frame = cv2.resize(final_frame, dsize=(config.out_H, config.out_W), interpolation=cv2.INTER_CUBIC)
-                                shrinked_frame = self.augment_data(shrinked_frame, augment)
-                                shrinked_X[d, i, j, z, :, :, :] = shrinked_frame
+                                resized_heatMat = cv2.resize(heatMat, dsize=(config.out_H, config.out_W), interpolation=cv2.INTER_CUBIC)
+                                resized_pafMat = cv2.resize(pafMat, dsize=(config.out_H, config.out_W), interpolation=cv2.INTER_CUBIC)
+                                resized_X = cv2.resize(X_data[d, i, j, z, :, :, :], dsize=(config.out_H, config.out_W), interpolation=cv2.INTER_CUBIC)
+                                shrinked_X[d, i, j, z, :, :, 0:5] = resized_X
+                                shrinked_X[d, i, j, z, :, :, 5] = resized_heatMat
+                                shrinked_X[d, i, j, z, :, :, 6] = resized_pafMat
+                                shrinked_X[d, i, j, z, :, :, :] = self.augment_data(shrinked_X[d, i, j, z, :, :, :], augment)
+
                                 pbar.update(1)
                             except Exception as e:
                                 print(e)
