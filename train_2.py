@@ -6,9 +6,9 @@ from tqdm import tqdm
 # import matplotlib.pyplot as plt
 import pprint
 from batch_generator_test import IO_manager
-from network_seq import activity_network
-from network_seq import Training
-from network_seq import Input_manager
+from network_deploy import activity_network
+from network_deploy import Training
+from network_deploy import Input_manager
 import config
 from tensorflow.python.client import device_lib
 
@@ -81,10 +81,9 @@ def train():
         IO_tool.start_openPose()
         train_writer = tf.summary.FileWriter("logdir/train", sess.graph)
         val_writer = tf.summary.FileWriter("logdir/val", sess.graph)
+        
         IO_tool.openpose.load_openpose_weights()
         sess.run(Train_Net.init)
-
-
 
         # Loading initial C3d or presaved network
         if os.path.isfile('./checkpoint/checkpoint') and config.load_pretrained_weigth:

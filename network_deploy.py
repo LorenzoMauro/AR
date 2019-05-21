@@ -2,6 +2,8 @@ import tensorflow as tf
 import config
 import os
 import numpy as np
+from openpose.network_mobilenet import MobilenetNetwork
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 
 
@@ -13,6 +15,8 @@ class Input_manager:
 
             with tf.name_scope("Input"):
                 self.input_batch = tf.placeholder(tf.uint8, shape=(None, None, config.seq_len, config.frames_per_step, config.out_H, config.out_W, config.input_channels), name="Input")
+                self.input_batch = tf.cast(self.input_batch, tf.float32)
+                
                 self.h_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), None, config.lstm_units), name="h_input")
                 self.c_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), None, config.lstm_units), name="c_input")
                 self.c_output = self.c_input
@@ -53,7 +57,6 @@ class activity_network:
 
             with tf.name_scope("Input"):
                 self.input_batch = tf.squeeze(Input_manager.input_batch[device_j, :, :, :, :, :])
-                self.input_batch = tf.cast(self.input_batch, tf.float32)
                 self.input_batch.set_shape([None, config.seq_len, config.frames_per_step, config.out_H, config.out_W, config.input_channels])
                 self.batch_size = tf.shape(self.input_batch)[0]
                 self.h_input = tf.squeeze(Input_manager.h_input[device_j, :, :, :])
@@ -123,7 +126,7 @@ class activity_network:
                         reshape_2_cd = tf.contrib.layers.flatten(reshape_1_cd)
                     
                     return reshape_2_cd
-
+            
             with tf.name_scope('c3d_mapfn'):
                 self.c3d_out = tf.map_fn(lambda x: C3d(x), self.input_batch)
 
@@ -320,9 +323,9 @@ class Training:
                     next_precision, next_recall, next_f1, next_accuracy = self.accuracy_metrics(next_pred_conc, next_label_conc)
                     help_precision, help_recall, help_f1, help_accuracy = self.accuracy_metrics(help_pred_conc, help_label_conc)
                     help_inference_precision, help_inference_recall, help_inference_f1, inference_accuracy = self.accuracy_metrics(help_inf_pred_conc, help_label_conc)
-                    action_inference_precision, action_inference_recall, action_inference_f1, action_accuracy = self.accuracy_metrics(help_inf_pred_conc[....1], help_label_conc[....1])
-                    object_inference_precision, object_inference_recall, object_inference_f1, object_inference_accuracy = self.accuracy_metrics(help_inf_pred_conc[....2], help_label_conc[....2])
-                    place_inference_precision, place_inference_recall, place_inference_f1, place_inference_accuracy = self.accuracy_metrics(help_inf_pred_conc[....3], help_label_conc[....3])
+                    action_inference_precision, action_inference_recall, action_inference_f1, action_accuracy = self.accuracy_metrics(help_inf_pred_conc[...,1], help_label_conc[...,1])
+                    object_inference_precision, object_inference_recall, object_inference_f1, object_inference_accuracy = self.accuracy_metrics(help_inf_pred_conc[...,2], help_label_conc[...,2])
+                    place_inference_precision, place_inference_recall, place_inference_f1, place_inference_accuracy = self.accuracy_metrics(help_inf_pred_conc[...,3], help_label_conc[...,3])
 
             with tf.name_scope('Loss'):
                 for Net in Networks:
@@ -370,12 +373,14 @@ class Training:
                     total_loss = (c3d_recall)*(now_recall*(next_recall*help_loss_sum + (1-next_recall)*next_loss_sum) + (1-now_recall)*now_loss_sum) + (1 - c3d_recall) * c3d_loss_sum + auto_enc_loss_sum
 
             with tf.name_scope("Optimizer"):
-                Train_variable = [v for v in self.variables if 'Openpose' not in v.name.split('/')[0]]
-                Train_variable = [v for v in Train_variable if 'MobilenetV1' not in v.name.split('/')[0]]
-
+                Train_variable = [v for v in self.variables if 'Openpose' not in v.name.split('/')]
+                Train_variable = [v for v in Train_variable if 'MobilenetV1' not in v.name.split('/')]
                 starter_learning_rate = 0.0001
                 learning_rate = tf.train.exponential_decay(starter_learning_rate, self.global_step,
                                                             1000, 0.9)
+                update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+                # with tf.control_dependencies(update_ops):
+    
                 self.train_op = tf.contrib.layers.optimize_loss(
                     loss=total_loss,
                     global_step=self.global_step,

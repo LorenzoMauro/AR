@@ -29,8 +29,8 @@ class Dataset:
 
             self.label_to_id = self.load('label_to_id')
             self.id_to_label = self.load('id_to_label')
-            self.word_to_id = self.load('label_to_id')
-            self.id_to_word = self.load('id_to_label')
+            self.word_to_id = self.load('word_to_id')
+            self.id_to_word = self.load('id_to_word')
             self.number_of_classes = len(self.word_to_id)
             self.frame_now = self.load('frame_label')
             self.train_collection = self.load('train_collection')

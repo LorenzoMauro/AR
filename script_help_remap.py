@@ -45,7 +45,7 @@ def clean_label(label):
         label = label[0] + ':' + label[1]
     return label
 
-def clean_label_2(label):
+def clean_label_2(label, dat, fl):
     label = label.split(':')
     if len(label) > 1:
         if 'under diverter' in label[1]:
@@ -53,6 +53,9 @@ def clean_label_2(label):
         elif 'on ladder' in label[1]:
             label = label[0] + ' on_ladder'
         else:
+            pp.pprint(fl)
+            # pp.pprint(dat)
+            print(label)
             label = label[0] + ' sil'
     else:
         label = label[0]
@@ -64,10 +67,12 @@ def clean_label_3(label):
     return label
 
 labels = []
+pp.pprint(help_dataset['recording_03-15-2019_16-14-27.267_cam6.avi'])
+
 for fl in help_dataset:
     label_list = []
     segment_start_to_entry = {}
-    print('NEW')
+    # print('NEW')
     # pp.pprint(help_dataset[fl])
 
     #map start time to entry
@@ -144,14 +149,14 @@ for fl in help_dataset:
     for idx in range(len(help_dataset[fl])):
         entry = help_dataset[fl][idx]
         label = entry['label']
-        label = clean_label_2(label)
+        label = clean_label_2(label, help_dataset[fl], fl)
         label = clean_label_3(label)
         help_dataset[fl][idx]['label'] = label
         if label not in labels:
             labels.append(label)
     
-with open(config.kit_help_annotation, 'w') as outfile:
-    json.dump(help_dataset, outfile)
+# with open(config.kit_help_annotation, 'w') as outfile:
+#     json.dump(help_dataset, outfile)
 
 labels.sort()
 print('labels')

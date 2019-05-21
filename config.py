@@ -5,7 +5,7 @@ allow_growth = True
 
 #[Train]
 c3d_ucf_weights = "sports1m_finetuning_ucf101.model"
-Batch_size = 10
+Batch_size = 2
 frames_per_step = 6
 window_size = 1
 load_previous_weigth = False
@@ -27,7 +27,7 @@ gradient_clipping_norm = 1.0
 c3d_dropout = 0.6
 preLstm_dropout = 0.6
 Lstm_dropout = 0.6
-input_channels = 7
+input_channels = 7 
 enc_fc_1 = 4000
 enc_fc_2 = int(enc_fc_1 / 2)
 lstm_units = int(enc_fc_2 / 2)
@@ -55,7 +55,7 @@ validation_fraction = 0.2
 split_seconds = True
 
 #[Annotation]
-rebuild = True
+rebuild = False
 limit_classes = True
 classes_to_use = ['milk', 'coffee'] # ['friedegg', 'cereals', 'milk']
 ocado_annotation = 'dataset/ocado.json'

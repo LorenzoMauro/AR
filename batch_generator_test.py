@@ -98,7 +98,7 @@ class IO_manager:
         random.seed(time.time())
         batch_segment_collection = []
         batch_video_name_collection = []
-        batch = np.zeros(shape=(Devices, config.Batch_size, config.seq_len, config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=np.uint8)
+        batch = np.zeros(shape=(Devices, config.Batch_size, config.seq_len, config.frames_per_step, config.op_input_height, config.op_input_height, 5), dtype=np.uint8)
         labels = np.zeros(shape=(Devices, config.Batch_size,config.seq_len + 1), dtype=int)
         help_labels = np.zeros(shape=(Devices, config.Batch_size, 4), dtype=int)
         next_labels = np.zeros(shape=(Devices, config.Batch_size), dtype=int)
@@ -224,7 +224,7 @@ class IO_manager:
         return final_label
 
     def extract_one_input(self, video_path, segment, pbar):
-        one_input = np.zeros(shape=(config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=np.uint8)
+        one_input = np.zeros(shape=(config.frames_per_step, config.op_input_height, config.op_input_height, 5), dtype=np.uint8)
         extracted_frames = {}
         frame_list = []
         try:
@@ -256,7 +256,7 @@ class IO_manager:
                             print('\ntotframe', tot_frames)
                             print('\nvideo_path', video_path)
                             print('\nsegment', segment)
-                        im = cv2.resize(im, dsize=(config.op_input_height, config.op_input_width), interpolation=cv2.INTER_CUBIC)
+                        im = cv2.resize(im, dsize=(config.op_input_height, config.op_input_height), interpolation=cv2.INTER_CUBIC)
                         extracted_frames[frame] = {}
                         extracted_frames[frame]['im'] = im
                         gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
@@ -275,7 +275,7 @@ class IO_manager:
                             print('\ntotframe', tot_frames)
                             print('\nvideo_path', video_path)
                             print('\nsegment', segment)
-                        im_prev = cv2.resize(im_prev, dsize=(config.op_input_height, config.op_input_width), interpolation=cv2.INTER_CUBIC)
+                        im_prev = cv2.resize(im_prev, dsize=(config.op_input_height, config.op_input_height), interpolation=cv2.INTER_CUBIC)
                         extracted_frames[frame_prev] = {}
                         extracted_frames[frame_prev]['im'] = im_prev
                         gray_prev = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
@@ -289,7 +289,7 @@ class IO_manager:
                     norm_flow = cv2.normalize(flow, norm_flow, 0, 255, cv2.NORM_MINMAX)
                     norm_flow = norm_flow.astype(np.uint8)
                     one_input[z, :, :, :3] = im
-                    one_input[z, :, :, 5:7] = flow
+                    one_input[z, :, :, 3:4] = flow
                     z += 1
                 except Exception as e:
                     pass
