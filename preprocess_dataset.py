@@ -20,7 +20,7 @@ import time
 
 class preprocess:
     def __init__(self):
-        self.preprocess_path = "/media/temirlan/SSD2/KIT/dataset/preprocessed"
+        self.preprocess_path = "dataset/preprocessed"
         with tf.Session() as sess:
             self.sess = sess
             self.openpose = OpenPose(self.sess)
@@ -28,7 +28,7 @@ class preprocess:
             #json_data = open(config.ocado_annotation).read()
             #dataset = json.loads(json_data)
             #pbar_file = tqdm(total=len(dataset), leave=False, desc='Files')
-            for root, dirs, files in os.walk(config.ocado_path):
+            for root, dirs, files in os.walk(config.kit_path):
                 for fl in files:
                     path = root + '/' + fl
                     folder = root.split('/')[-2:]
