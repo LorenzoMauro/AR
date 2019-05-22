@@ -162,6 +162,8 @@ class activity_network:
                     h_out = tf.concat([h_out, h_exp], axis=0)
                 self.c_out = c_out
                 self.h_out = h_out
+                deploy_c = tf.identity(c_out, name="c_out")
+                deploy_h = tf.identity(h_out, name="h_out")
                 encoder_state = encoder_state[-1]
    
             def decoder_lstm(dec_lstm_units):
@@ -207,7 +209,9 @@ class activity_network:
 
             with tf.name_scope('Next_classifier'):
                 self.now_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
-                flat_now = tf.contrib.layers.flatten(self.now_softmax)
+                correct_shape = self.now_softmax.shape
+                self.inference_softmax.set_shape([correct_shape[0], correct_shape[1], correct_shape[2]])
+                flat_now = tf.contrib.layers.flatten(self.inference_softmax)
                 C_composedVec = tf.concat([encoder_state.c, flat_now], 1)
                 H_composedVec = tf.concat([encoder_state.h, flat_now], 1)
                 new_C = tf.layers.dense(C_composedVec, config.lstm_units)
@@ -453,3 +457,5 @@ class Training:
             # accuracy = (TP) / (TP + FP + TN + FN)
             accuracy = (TP + TN) / (TP + FP + TN + FN)
         return precision, recall, f1, accuracy
+
+

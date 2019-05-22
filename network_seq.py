@@ -3,6 +3,8 @@ import config
 import os
 import numpy as np
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 
 
@@ -320,10 +322,9 @@ class Training:
                     next_precision, next_recall, next_f1, next_accuracy = self.accuracy_metrics(next_pred_conc, next_label_conc)
                     help_precision, help_recall, help_f1, help_accuracy = self.accuracy_metrics(help_pred_conc, help_label_conc)
                     help_inference_precision, help_inference_recall, help_inference_f1, inference_accuracy = self.accuracy_metrics(help_inf_pred_conc, help_label_conc)
-                    action_inference_precision, action_inference_recall, action_inference_f1, action_accuracy = self.accuracy_metrics(help_inf_pred_conc[....1], help_label_conc[....1])
-                    object_inference_precision, object_inference_recall, object_inference_f1, object_inference_accuracy = self.accuracy_metrics(help_inf_pred_conc[....2], help_label_conc[....2])
-                    place_inference_precision, place_inference_recall, place_inference_f1, place_inference_accuracy = self.accuracy_metrics(help_inf_pred_conc[....3], help_label_conc[....3])
-
+                    action_inference_precision, action_inference_recall, action_inference_f1, action_accuracy = self.accuracy_metrics(help_inf_pred_conc[...,1], help_label_conc[...,1])
+                    object_inference_precision, object_inference_recall, object_inference_f1, object_inference_accuracy = self.accuracy_metrics(help_inf_pred_conc[...,2], help_label_conc[...,2])
+                    place_inference_precision, place_inference_recall, place_inference_f1, place_inference_accuracy = self.accuracy_metrics(help_inf_pred_conc[...,3], help_label_conc[...,3])
             with tf.name_scope('Loss'):
                 for Net in Networks:
                     z = 0
@@ -376,6 +377,8 @@ class Training:
                 starter_learning_rate = 0.0001
                 learning_rate = tf.train.exponential_decay(starter_learning_rate, self.global_step,
                                                             1000, 0.9)
+                
+                pp.pprint(Train_variable)
                 self.train_op = tf.contrib.layers.optimize_loss(
                     loss=total_loss,
                     global_step=self.global_step,

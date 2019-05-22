@@ -137,79 +137,80 @@ class IO_manager:
         pbar.refresh()
         return batch, labels, c, h, batch_video_name_collection, batch_segment_collection, next_labels, help_labels
 
-    def entry_selector(self, dataset,ordered_collection, is_ordered):
-        random.seed(time.time())
-        time_step = 0
-        # start from first seq_len segment : to be improved
-        while time_step <= config.seq_len:
-            if config.balance_key == 'all':
-                r_now = random.choice(list(dataset.keys()))
-                r_next = random.choice(list(dataset[r_now].keys()))
-                r_help = random.choice(list(dataset[r_now][r_next].keys()))
-                try:
-                    entry = random.choice(dataset[r_now][r_next][r_help])
-                except Exception as e:
-                    print(self.dataset.id_to_label[r_now], self.dataset.id_to_label[r_next], self.dataset.id_to_label[r_help])
-                    print(r_now, r_next, r_help)
-                    print(dataset[r_now][r_next][r_help])
-                    pass
-                time_step = entry['time_step']
-            else:
-                random_couple = random.choice(list(dataset))
-                entry = random.choice(dataset[random_couple])
+    # def entry_selector(self, dataset,ordered_collection, is_ordered):
+    #     random.seed(time.time())
+    #     time_step = 0
+    #     # start from first seq_len segment : to be improved
+    #     while time_step <= config.seq_len:
+    #         if config.balance_key == 'all':
+    #             r_now = random.choice(list(dataset.keys()))
+    #             r_next = random.choice(list(dataset[r_now].keys()))
+    #             r_help = random.choice(list(dataset[r_now][r_next].keys()))
+    #             try:
+    #                 entry = random.choice(dataset[r_now][r_next][r_help])
+    #             except Exception as e:
+    #                 print(self.dataset.id_to_label[r_now], self.dataset.id_to_label[r_next], self.dataset.id_to_label[r_help])
+    #                 print(r_now, r_next, r_help)
+    #                 print(dataset[r_now][r_next][r_help])
+    #                 pass
+    #             time_step = entry['time_step']
+    #         else:
+    #             random_couple = random.choice(list(dataset))
+    #             entry = random.choice(dataset[random_couple])
 
-        entry_list = []
-        back = False
-        for _ in range(config.seq_len):
-                if not back:
-                    entry_list.append(entry)
-                    back = True
-                else:
-                    path = entry['path']
-                    time_step = entry['time_step']
-                    entry = ordered_collection[path][time_step - 1]
-                    entry_list.append(entry)
+    #     entry_list = []
+    #     back = False
+    #     for _ in range(config.seq_len):
+    #             if not back:
+    #                 entry_list.append(entry)
+    #                 back = True
+    #             else:
+    #                 path = entry['path']
+    #                 time_step = entry['time_step']
+    #                 entry = ordered_collection[path][time_step - 1]
+    #                 entry_list.append(entry)
 
-        entry_list.reverse()
-        return entry_list
+    #     entry_list.reverse()
+    #     return entry_list
 
-    def label_calculator(self, frame_list, path, untrimmed):
-        label_clip = {}
-        for frame in frame_list:
-            if frame not in untrimmed[path]:
-                print(frame_list)
-                print(frame_list)
-            label = untrimmed[path][frame]
-            if label not in label_clip:
-                label_clip[label] = 0
-            label_clip[label] += 1
-        try:
-            final_label = max(label_clip, key=label_clip.get)
-        except Exception as e:
-            print(label_clip, frame_list)
-            final_label = 0
-            pass
-        return final_label
-    def extract_preprocessed_one_input(self, video_path, segment, pbar):
-        one_input = np.zeros(shape=(config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=float)
-        extracted_frames = {}
-        frame_list = []
-        try:
-            linspace_frame = np.linspace(segment[0], segment[1], num=config.frames_per_step)
-            z = 0
-            for frame in linspace_frame:
-                try:
-                    one_input[z, :, :, :] = self.prep_dataset.get_matrix(video_path, frame)
-                    z += 1
-                except Exception as e:
-                    pass
-                pbar.update(1)
-        except Exception as e:
-            pass
-        frame_list = extracted_frames.keys()
-        return one_input, frame_list
+    # def label_calculator(self, frame_list, path, untrimmed):
+    #     label_clip = {}
+    #     for frame in frame_list:
+    #         if frame not in untrimmed[path]:
+    #             print(frame_list)
+    #             print(frame_list)
+    #         label = untrimmed[path][frame]
+    #         if label not in label_clip:
+    #             label_clip[label] = 0
+    #         label_clip[label] += 1
+    #     try:
+    #         final_label = max(label_clip, key=label_clip.get)
+    #     except Exception as e:
+    #         print(label_clip, frame_list)
+    #         final_label = 0
+    #         pass
+    #     return final_label
 
-    def extract_one_input(self, video_path, segment, pbar):
+    # def extract_preprocessed_one_input(self, video_path, segment, pbar):
+    #     one_input = np.zeros(shape=(config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=float)
+    #     extracted_frames = {}
+    #     frame_list = []
+    #     try:
+    #         linspace_frame = np.linspace(segment[0], segment[1], num=config.frames_per_step)
+    #         z = 0
+    #         for frame in linspace_frame:
+    #             try:
+    #                 one_input[z, :, :, :] = self.prep_dataset.get_matrix(video_path, frame)
+    #                 z += 1
+    #             except Exception as e:
+    #                 pass
+    #             pbar.update(1)
+    #     except Exception as e:
+    #         pass
+    #     frame_list = extracted_frames.keys()
+    #     return one_input, frame_list
+
+    def extract_one_input(self, video_path, segment):
         one_input = np.zeros(shape=(config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=np.uint8)
         extracted_frames = {}
         frame_list = []
@@ -279,7 +280,6 @@ class IO_manager:
                     z += 1
                 except Exception as e:
                     pass
-                pbar.update(1)
         except Exception as e:
             pass
 

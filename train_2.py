@@ -6,9 +6,9 @@ from tqdm import tqdm
 # import matplotlib.pyplot as plt
 import pprint
 from batch_generator_test import IO_manager
-from network_deploy import activity_network
-from network_deploy import Training
-from network_deploy import Input_manager
+from network_seq import activity_network
+from network_seq import Training
+from network_seq import Input_manager
 import config
 from tensorflow.python.client import device_lib
 
@@ -103,6 +103,7 @@ def train():
         training = True
         with tf.name_scope('whole_saver'):
             whole_saver = tf.train.Saver()
+        whole_saver.save(sess, config.model_filename, global_step=0)
         pbar_whole = tqdm(total=(config.tot_steps), desc='Step')
         while step < config.tot_steps:
             ready_batch = 0

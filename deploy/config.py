@@ -6,7 +6,6 @@ allow_growth = True
 #[Train]
 c3d_ucf_weights = "sports1m_finetuning_ucf101.model"
 Batch_size = 10
-frames_per_step = 6
 window_size = 1
 load_previous_weigth = False
 load_pretrained_weigth = False
@@ -28,12 +27,7 @@ gradient_clipping_norm = 1.0
 c3d_dropout = 0.6
 preLstm_dropout = 0.6
 Lstm_dropout = 0.6
-input_channels = 7
-enc_fc_1 = 4000
-enc_fc_2 = int(enc_fc_1 / 2)
-lstm_units = int(enc_fc_2 / 2)
-pre_class = int(lstm_units / 2)
-encoder_lstm_layers = 3*[lstm_units]
+
 matrix_attention = False
 decoder_embedding_size = 20
 
@@ -49,7 +43,6 @@ snow_ball_classes = 3
 op_input_width = 368
 op_input_height = 368
 show_pic = False
-seq_len = 4
 
 #[Dataset]
 validation_fraction = 0.2
@@ -74,3 +67,17 @@ iccv_json = ['Long jump.json', 'Triple jump.json']
 iccv__annotation = breakfast_annotation = 'dataset/iccv.json'
 dataset = 'Ocado'
 breakfast_fps = 15
+
+# deploy
+out_H = 112
+out_W = out_H
+op_input_width = 368
+op_input_height = op_input_width
+frames_per_step = 6
+input_channels = 7
+seq_len = 4
+enc_fc_1 = 4000
+enc_fc_2 = int(enc_fc_1 / 2)
+lstm_units = int(enc_fc_2 / 2)
+pre_class = int(lstm_units / 2)
+encoder_lstm_layers = 3*[lstm_units]
