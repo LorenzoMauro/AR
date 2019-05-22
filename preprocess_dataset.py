@@ -7,32 +7,35 @@ import time
 from poseEstimation import OpenPose
 from tqdm import tqdm
 import pickle
-from dataset_manager import Dataset
+#from dataset_manager import Dataset
 import config
-import multiprocessing.dummy as mp
+#import multiprocessing.dummy as mp
 import datetime
 import tensorflow as tf
-import json
-import h5py
+#import json
+#import h5py
 import numpy as np
 import time
 
 
 class preprocess:
     def __init__(self):
-        self.preprocess_path = "dataset/preprocessed/"
+        self.preprocess_path = "/media/temirlan/SSD2/KIT/dataset/preprocessed"
         with tf.Session() as sess:
             self.sess = sess
             self.openpose = OpenPose(self.sess)
             self.openpose.load_openpose_weights()
-            json_data = open(config.ocado_annotation).read()
-            dataset = json.loads(json_data)
-            pbar_file = tqdm(total=len(dataset), leave=False, desc='Files')
+            #json_data = open(config.ocado_annotation).read()
+            #dataset = json.loads(json_data)
+            #pbar_file = tqdm(total=len(dataset), leave=False, desc='Files')
             for root, dirs, files in os.walk(config.ocado_path):
                 for fl in files:
                     path = root + '/' + fl
-                    if fl in dataset:
-                        file_path = self.preprocess_path + fl.split('.')[0]
+                    folder = root.split('/')[-2:]
+                    print(root)
+                    if fl.endswith('.avi'):
+                        file_path = self.preprocess_path + '/'+fl[:-4]
+                        print(file_path)
                         if not os.path.exists(file_path):
                             os.makedirs(file_path)
                         start_frame = 0
@@ -44,8 +47,12 @@ class preprocess:
                         prev_gray = cv2.cvtColor(prev, cv2.COLOR_BGR2GRAY)
     
                         pbar_frame = tqdm(total=length, leave=False, desc='Frame')
+                        d= 0
 
                         for frame in range(1, length):
+                            print(d)
+                            d+=1
+
                             frame_path = file_path + "/" + str(frame)
                             if not os.path.isfile(frame_path + '_heatMat.jpg'):
                                 frame_matrix = np.zeros(shape=(368, 368, 7), dtype=float)
@@ -76,12 +83,14 @@ class preprocess:
                                     print(path + '    frame:' + str(frame))
                                     pass
                             pbar_frame.update(1)
-                        pbar_frame.refresh()
+                            #if d ==3:
+                                #break
+                        #pbar_frame.refresh()
                         pbar_frame.close()
-                        pbar_file.update(1)
-                pbar_file.refresh()
-                pbar_file.clear()
-                pbar_file.close()
+                        #pbar_file.update(1)
+                #pbar_file.refresh()
+                #pbar_file.clear()
+                #pbar_file.close()
 
     def save_frame(self, frame_matrix, frame_path):
         cv2.imwrite(frame_path + '_rgb.jpg',frame_matrix[:, :, :3])

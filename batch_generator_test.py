@@ -12,6 +12,7 @@ import config
 import multiprocessing.dummy as mp
 from PIL import Image
 import datetime
+import prep_dataset_manager as prep_dataset
 
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -19,6 +20,7 @@ pp = pprint.PrettyPrinter(indent=4)
 class IO_manager:
     def __init__(self, sess):
         self.dataset = Dataset()
+        self.prep_dataset = prep_dataset()
         self.num_classes = self.dataset.number_of_classes
         self.sess = sess
         self.openpose = None
@@ -49,56 +51,19 @@ class IO_manager:
 
         pool = mp.Pool(processes=config.processes)
         ready_batch = pool.map(multiprocess_batch, range(0, config.tasks))
-        ready_batch = self.add_pose(ready_batch, self.sess, augment)
+        if not config.use_prep:
+            ready_batch = self.add_pose(ready_batch, self.sess, augment)
         # ready_batch = self.group_batches(ready_batch, Devices, pbar)
         pbar.close()
         pool.close()
         pool.join()
         return ready_batch
 
-    def group_batches(self, ready_batch, Devices, pbar):
-        new_collection = []
-        for j in range(config.tasks):
-            selected_batches = ready_batch[j: j+Devices]
-            if Devices == 'g':
-                X = [v['X'] for v in selected_batches]
-                X = np.expand_dims(X, axis=0)
-                Y = [v['Y'] for v in selected_batches]
-                Y = np.expand_dims(Y, axis=0)
-                c = [v['c'] for v in selected_batches]
-                c = np.expand_dims(c, axis=0)
-                h = [v['h'] for v in selected_batches]
-                h = np.expand_dims(h, axis=0)
-                next_label = [v['next_Y'] for v in selected_batches]
-                next_label = np.expand_dims(next_label, axis=0)
-            else:
-                X = [v['X'] for v in selected_batches]
-                X = np.stack(X, axis=0)
-                Y = [v['Y'] for v in selected_batches]
-                Y = np.stack(Y, axis=0)
-                c = [v['c'] for v in selected_batches]
-                c = np.stack(c, axis=0)
-                h = [v['h'] for v in selected_batches]
-                h = np.stack(h, axis=0)
-                next_label = [v['next_Y'] for v in selected_batches]
-                next_label = np.stack(next_label, axis=0)
-            video_name_collection = []
-            segment_collection = []
-            for i in range(Devices):
-                video_name_collection.append(ready_batch[j+i]['video_name_collection'])
-                segment_collection.append(ready_batch[j+i]['segment_collection'])
-            new_collection.append({'X': X, 'Y': Y, 'c': c, 'h': h,
-                    'next_Y': next_label,
-                    'video_name_collection': video_name_collection,
-                    'segment_collection': segment_collection})
-            pbar.update(1)
-        return new_collection
-
     def batch_generator(self, pbar, Devices, Train=True):
         random.seed(time.time())
         batch_segment_collection = []
         batch_video_name_collection = []
-        batch = np.zeros(shape=(Devices, config.Batch_size, config.seq_len, config.frames_per_step, config.op_input_height, config.op_input_height, 5), dtype=np.uint8)
+        batch = np.zeros(shape=(Devices, config.Batch_size, config.seq_len, config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=np.uint8)
         labels = np.zeros(shape=(Devices, config.Batch_size,config.seq_len + 1), dtype=int)
         help_labels = np.zeros(shape=(Devices, config.Batch_size, 4), dtype=int)
         next_labels = np.zeros(shape=(Devices, config.Batch_size), dtype=int)
@@ -129,7 +94,10 @@ class IO_manager:
                     segment = entry['segment']
                     help_label = entry['help']
                     help_label = self.dataset.id_to_label[help_label].split(' ')
-                    one_input, frame_list = self.extract_one_input(path, segment, pbar)
+                    if config.use_prep:
+                        one_input, frame_list = self.extract_preprocessed_one_input(path, segment, pbar)
+                    else:
+                        one_input, frame_list = self.extract_one_input(path, segment, pbar)
                     config.snow_ball_step_count += 1
 
                     
@@ -222,9 +190,27 @@ class IO_manager:
             final_label = 0
             pass
         return final_label
+    def extract_preprocessed_one_input(self, video_path, segment, pbar):
+        one_input = np.zeros(shape=(config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=float)
+        extracted_frames = {}
+        frame_list = []
+        try:
+            linspace_frame = np.linspace(segment[0], segment[1], num=config.frames_per_step)
+            z = 0
+            for frame in linspace_frame:
+                try:
+                    one_input[z, :, :, :] = self.prep_dataset.get_matrix(video_path, frame)
+                    z += 1
+                except Exception as e:
+                    pass
+                pbar.update(1)
+        except Exception as e:
+            pass
+        frame_list = extracted_frames.keys()
+        return one_input, frame_list
 
     def extract_one_input(self, video_path, segment, pbar):
-        one_input = np.zeros(shape=(config.frames_per_step, config.op_input_height, config.op_input_height, 5), dtype=np.uint8)
+        one_input = np.zeros(shape=(config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=np.uint8)
         extracted_frames = {}
         frame_list = []
         try:
@@ -256,7 +242,7 @@ class IO_manager:
                             print('\ntotframe', tot_frames)
                             print('\nvideo_path', video_path)
                             print('\nsegment', segment)
-                        im = cv2.resize(im, dsize=(config.op_input_height, config.op_input_height), interpolation=cv2.INTER_CUBIC)
+                        im = cv2.resize(im, dsize=(config.op_input_height, config.op_input_width), interpolation=cv2.INTER_CUBIC)
                         extracted_frames[frame] = {}
                         extracted_frames[frame]['im'] = im
                         gray = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
@@ -275,7 +261,7 @@ class IO_manager:
                             print('\ntotframe', tot_frames)
                             print('\nvideo_path', video_path)
                             print('\nsegment', segment)
-                        im_prev = cv2.resize(im_prev, dsize=(config.op_input_height, config.op_input_height), interpolation=cv2.INTER_CUBIC)
+                        im_prev = cv2.resize(im_prev, dsize=(config.op_input_height, config.op_input_width), interpolation=cv2.INTER_CUBIC)
                         extracted_frames[frame_prev] = {}
                         extracted_frames[frame_prev]['im'] = im_prev
                         gray_prev = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
@@ -289,7 +275,7 @@ class IO_manager:
                     norm_flow = cv2.normalize(flow, norm_flow, 0, 255, cv2.NORM_MINMAX)
                     norm_flow = norm_flow.astype(np.uint8)
                     one_input[z, :, :, :3] = im
-                    one_input[z, :, :, 3:4] = flow
+                    one_input[z, :, :, 5:7] = flow
                     z += 1
                 except Exception as e:
                     pass
@@ -306,12 +292,12 @@ class IO_manager:
         total = len(X) * shape[0] * shape[1]* shape[2]* shape[2]
         augment = 'none'
         if augment:
-            augment = random.choice(['none', 'horizzontal', 'vertical', 'both'])   
+            augment = random.choice(['none', 'horizzontal', 'vertical', 'both'])
         pbar = tqdm(total=total, leave=False, desc='Computing Poses')
-        for k in range(len(X)): 
+        for k in range(len(X)):
             X_data = (X[k])['X']
             shape = X_data.shape
-            shrinked_X = np.zeros(shape=(shape[0], shape[1], shape[2], shape[3], config.out_H, config.out_W, 7), dtype=np.uint8)
+            shrinked_X = np.zeros(shape=(shape[0], shape[1], shape[2], shape[3], config.out_H, config.out_W, shape[6]), dtype=np.uint8)
             for d in range(shape[0]):
                 for i in range(shape[1]):
                     for j in range(shape[2]):
@@ -321,14 +307,12 @@ class IO_manager:
                                 pafMat, heatMat = self.openpose.compute_pose_frame(X_Data)
                                 heatMat = heatMat.astype(np.uint8)
                                 pafMat = pafMat.astype(np.uint8)
-                                resized_heatMat = cv2.resize(heatMat, dsize=(config.out_H, config.out_W), interpolation=cv2.INTER_CUBIC)
-                                resized_pafMat = cv2.resize(pafMat, dsize=(config.out_H, config.out_W), interpolation=cv2.INTER_CUBIC)
-                                resized_X = cv2.resize(X_data[d, i, j, z, :, :, :], dsize=(config.out_H, config.out_W), interpolation=cv2.INTER_CUBIC)
-                                shrinked_X[d, i, j, z, :, :, 0:5] = resized_X
-                                shrinked_X[d, i, j, z, :, :, 5] = resized_heatMat
-                                shrinked_X[d, i, j, z, :, :, 6] = resized_pafMat
-                                shrinked_X[d, i, j, z, :, :, :] = self.augment_data(shrinked_X[d, i, j, z, :, :, :], augment)
-
+                                X_data[d, i, j, z, :, :, 3] = heatMat
+                                X_data[d, i, j, z, :, :, 4] = pafMat
+                                final_frame = X_data[d, i, j, z, :, :, :]
+                                shrinked_frame = cv2.resize(final_frame, dsize=(config.out_H, config.out_W), interpolation=cv2.INTER_CUBIC)
+                                shrinked_frame = self.augment_data(shrinked_frame, augment)
+                                shrinked_X[d, i, j, z, :, :, :] = shrinked_frame
                                 pbar.update(1)
                             except Exception as e:
                                 print(e)
