@@ -50,9 +50,7 @@ class preprocess:
                         d= 0
 
                         for frame in range(1, length):
-                            print(d)
                             d+=1
-
                             frame_path = file_path + "/" + str(frame)
                             if not os.path.isfile(frame_path + '_heatMat.jpg'):
                                 frame_matrix = np.zeros(shape=(368, 368, 7), dtype=float)
