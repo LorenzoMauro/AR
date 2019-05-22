@@ -4,7 +4,6 @@ import cv2
 import numpy as np
 import multiprocessing.dummy as mt
 import config
-from batch_generator_test import IO_manager
 
 
 class activity_network:
@@ -16,14 +15,16 @@ class activity_network:
             self.sess = sess
 
         # load architecture in graph and weights in session and initialize
-        self.architecture = tf.train.import_meta_graph('model/Net_weigths.model-10250.meta')
-        self.latest_ckp = tf.train.latest_checkpoint('./model')
+
         self.graph = tf.get_default_graph()
-        self.architecture.restore(self.sess, self.latest_ckp)
+        self.architecture = tf.train.import_meta_graph('model/activity_network_model-0.meta')
+        self.latest_ckp = tf.train.latest_checkpoint('model')
+        self.create_graph_log()
         self.init = tf.group(tf.global_variables_initializer(),
                              tf.local_variables_initializer())
-        sess.run(self.init)
-        self.IO_tool = IO_manager(sess)
+        self.sess.run(self.init)
+
+        self.architecture.restore(self.sess, self.latest_ckp)
         self.hidden_states_collection = {}
 
 
@@ -43,7 +44,7 @@ class activity_network:
         self.c_input = self.graph.get_tensor_by_name("Inputs/Input/c_input:0")
         self.now_softmax = self.graph.get_tensor_by_name("Network/Activity_Recognition_Network/Now_Decoder_inference/softmax_out:0")
         self.help_softmax = self.graph.get_tensor_by_name("Network/Activity_Recognition_Network/Help_Decoder_inference/softmax_out:0")
-        self.next_softmax = self.graph.get_tensor_by_name("Network/Activity_Recognition_Network/Next_classifier/Softmax_out:0")
+        self.next_softmax = self.graph.get_tensor_by_name("Network/Activity_Recognition_Network/Next_classifier/softmax_out:0")
         self.c_out = self.graph.get_tensor_by_name("Network/Activity_Recognition_Network/Lstm_encoder/c_out:0")
         self.h_out = self.graph.get_tensor_by_name("Network/Activity_Recognition_Network/Lstm_encoder/h_out:0")
 
@@ -69,7 +70,13 @@ class activity_network:
         shape_img = img.shape
         if shape_img[0] != config.op_input_height:
             img = cv2.resize(img, dsize=(config.op_input_height, config.op_input_width), interpolation=cv2.INTER_CUBIC)
-        pafMat, heatMat = self.IO_tool.openpose.compute_pose_frame(img)
+        pafMat, heatMat = self.sess.run([self.pose_out_1, self.pose_out_2], feed_dict={'image:0': [img]})
+        heatMat, pafMat = heatMat[0], pafMat[0]
+        heatMat = np.amax(heatMat, axis=2)
+        pafMat = np.amax(pafMat, axis=2)
+        heatMat = cv2.resize(heatMat, dsize=(config.out_H, config.out_W), interpolation=cv2.INTER_CUBIC)
+        pafMat = cv2.resize(pafMat, dsize=(config.out_H, config.out_W), interpolation=cv2.INTER_CUBIC)
+        # pafMat, heatMat = self.IO_tool.openpose.compute_pose_frame(img)
         return pafMat, heatMat
 
     def compound_channel(self, img, flow, heatMat, pafMat):
@@ -189,3 +196,6 @@ class activity_network:
         now_softmax, next_softmax, help_softmax = self.compute_activity_given_tensor(tensor, second_count)
 
         return now_softmax, next_softmax, help_softmax
+
+    
+activity_network = activity_network()
