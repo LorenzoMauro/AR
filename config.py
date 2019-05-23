@@ -11,6 +11,7 @@ window_size = 1
 load_previous_weigth = False
 load_pretrained_weigth = False
 model_filename = './checkpoint/Net_weigths.model'
+deploy_folder = './deploy/model/activity_network_model'
 tot_steps = 1000000
 processes = 12
 tasks = 10
@@ -55,7 +56,7 @@ validation_fraction = 0.2
 split_seconds = True
 
 #[Annotation]
-rebuild = True
+rebuild = False
 limit_classes = True
 use_prep = True
 classes_to_use = ['milk', 'coffee'] # ['friedegg', 'cereals', 'milk']

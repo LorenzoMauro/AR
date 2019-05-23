@@ -10,6 +10,8 @@
 /dataset/ordered_collection.pkl
 /dataset/test_collection.pkl
 /dataset/train_collection.pkl
+/dataset/id_to_word.pkl
+/dataset/word_to_id.pkl
 /logdir
 /debug
 /checkpoint
@@ -18,3 +20,7 @@
 /dataset/preprocessed
 /.vscode/settings.json
 /excluded_video
+/deploy/openpose
+/deploy/_pycache_
+/deploy/tensorboardLogs
+/deploy_writer
