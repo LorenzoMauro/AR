@@ -50,7 +50,6 @@ class preprocess:
                         d= 0
 
                         for frame in range(1, length):
-                            print(d)
                             d+=1
 
                             frame_path = file_path + "/" + str(frame)
