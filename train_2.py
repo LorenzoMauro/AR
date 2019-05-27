@@ -142,7 +142,7 @@ def train():
 
                 
 
-                if step % 5000 == 0 or (step + 1) == config.tot_steps:
+                if step % config.val_step == 0 or (step + 1) == config.tot_steps:
                     validation = True
                     if validation:
                         val_step = step
