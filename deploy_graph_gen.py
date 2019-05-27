@@ -20,14 +20,10 @@ with tf.Session() as sess:
     Net_collection = {}
     Input_net = Input_manager(len(available_gpus), IO_tool)
     device = available_gpus[0]
-    # with tf.device(device.name):
     with tf.variable_scope('Network') as scope:
         Net = activity_network(number_of_classes, Input_net, j, IO_tool)
-    # Train_Net = Training(Net_collection)
     IO_tool.start_openPose()
 
-    # IO_tool.openpose.load_openpose_weights()
-    # sess.run(Train_Net.init)
     with tf.name_scope('Saver_and_Loader'):
         with tf.name_scope('whole_saver'):
             whole_saver = tf.train.Saver()
@@ -41,11 +37,6 @@ with tf.Session() as sess:
         var_list = [v for v in variables if v.name.split(':')[0] in var_rest]
         loader = tf.train.Saver(var_list=var_list)
         loader.restore(sess, ckpts)
-        # whole_saver.restore(sess, ckpts)
-        # sess.run(tf.global_variables_initializer())
-        pp.pprint(variables[0])
-        pp.pprint(var_list[0])
-        pp.pprint(var_rest[0])
         whole_saver.save(sess, config.deploy_folder, global_step=0)
         deploy_writer = tf.summary.FileWriter("deploy_writer", sess.graph)
 

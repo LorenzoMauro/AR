@@ -3,9 +3,12 @@ import os
 import multiprocessing.dummy as mp
 import numpy as np
 from tqdm import tqdm
-# import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('TkAgg')
+from matplotlib import pyplot as plt
 import pprint
 from batch_generator_test import IO_manager
+from confusion_tool import confusion_tool as confusion_tool_class
 from network_seq import activity_network
 from network_seq import Training
 from network_seq import Input_manager
@@ -16,44 +19,6 @@ pp = pprint.PrettyPrinter(indent=4)
 tf_config = tf.ConfigProto(inter_op_parallelism_threads=config.inter_op_parallelism_threads, allow_soft_placement = True)
 tf_config.gpu_options.allow_growth = config.allow_growth
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-
-def calculate_confusion_matrix(confusion, batch, y_pred, step, folder_name, id_to_label):
-    if not os.path.exists('./results/confusion_matrix/' + folder_name + '/'):
-        os.makedirs('./results/confusion_matrix/' + folder_name + '/')
-
-    y_true = np.argmax(batch, axis=1)
-    shape_label = y_true.shape
-    for i in range(shape_label[0]):
-        true_label = y_true[i]
-        actual_label = y_pred[i]
-        confusion[true_label, actual_label] += 1
-
-    if (step) % 100 == 0 or folder_name in ['c3d_val', 'lstm_val']:
-        if (step) % 1000 == 0:
-            nm_confusion = confusion / confusion.astype(np.float).sum(axis=1)
-            plt.imshow(nm_confusion, cmap=plt.cm.Blues, aspect='auto')
-        else:
-            plt.imshow(confusion, cmap=plt.cm.Blues, aspect='auto')
-        plt.xlabel("Predicted labels")
-        plt.ylabel("True labels")
-        dict_len = len(id_to_label.keys())
-        label_list = [None] * dict_len
-        for i in id_to_label:
-            try:
-                label_list[i] = id_to_label[i].split(':')[1]
-            except:
-                label_list[i] = id_to_label[i]
-        plt.yticks(np.arange(dict_len), label_list)
-        plt.yticks([], [])
-        plt.xticks([], [])
-        plt.title('Confusion matrix Step:' + str(step))
-        plt.colorbar()
-        if (step) % 1000 == 0:
-            plt.savefig('./results/confusion_matrix/' + folder_name + '/cm' + str(step) + '.png')
-        else:
-            plt.savefig('./results/confusion_matrix/' + folder_name + '/cm.png')
-        plt.gcf().clear()
-    return confusion
 
 def get_available_gpus():
     local_device_protos = device_lib.list_local_devices()
@@ -89,29 +54,24 @@ def train():
         if os.path.isfile('./checkpoint/checkpoint') and config.load_pretrained_weigth:
             print('new model loaded')
             Train_Net.model_saver.restore(sess, tf.train.latest_checkpoint('./checkpoint'))
-        elif config.load_previous_weigth and config.load_pretrained_weigth:
+        elif config.load_c3d:
             print('original c3d loaded')
             Train_Net.c3d_loader.restore(sess, config.c3d_ucf_weights)
 
-        # confusion_train_Lstm = np.zeros((number_of_classes, number_of_classes))
-        # confusion_train_C3d = np.zeros((number_of_classes, number_of_classes))
-        # confusion_train_Next = np.zeros((number_of_classes, number_of_classes))
-        # confusion_val_Lstm = np.zeros((number_of_classes, number_of_classes))
-        # confusion_val_C3d = np.zeros((number_of_classes, number_of_classes))
-        # confusion_val_Next = np.zeros((number_of_classes, number_of_classes))
         step = 0
         training = True
         with tf.name_scope('whole_saver'):
             whole_saver = tf.train.Saver()
-        whole_saver.save(sess, config.model_filename, global_step=0)
+        # whole_saver.save(sess, config.model_filename, global_step=0)
         pbar_whole = tqdm(total=(config.tot_steps), desc='Step')
+        confusion_tool = confusion_tool_class(number_of_classes, IO_tool, sess, Train_Net)
         while step < config.tot_steps:
             ready_batch = 0
             pbar = tqdm(total=(config.tasks * config.Batch_size * config.seq_len * len(available_gpus) * config.frames_per_step + len(available_gpus)*config.tasks - 1), leave=False, desc='Batch Generation')
             ready_batch = IO_tool.compute_batch(pbar, Devices=len(available_gpus), Train=training)
             for batch in ready_batch:
-                summary, t_op, now_pred, next_pred, c3d_predm, c_state, h_state = sess.run([Train_Net.merged, Train_Net.train_op,
-                                                                                            Train_Net.predictions_now, Train_Net.predictions_next, Train_Net.predictions_c3d,
+                summary, t_op, now_pred, next_pred, c3d_pred, help_pred, c_state, h_state = sess.run([Train_Net.merged, Train_Net.train_op,
+                                                                                            Train_Net.predictions_now_conc, Train_Net.predictions_next_conc, Train_Net.predictions_c3d_conc, Train_Net.predictions_help_conc,
                                                                                             Train_Net.c_out_list, Train_Net.h_out_list],
                                                                                             feed_dict={Input_net.input_batch: batch['X'],
                                                                                                         Input_net.labels: batch['Y'],
@@ -137,66 +97,131 @@ def train():
                         #                         forecast[j][y],
                         #                         batch['next_Y'][j][y])
 
-                    # confusion_train_C3d = calculate_confusion_matrix(confusion_train_C3d, batch['Y'][j], y_c3d[j], (step + 1) * config.Batch_size, 'c3d', IO_tool.dataset.id_to_label)
-                    # confusion_train_Lstm = calculate_confusion_matrix(confusion_train_Lstm, batch['Y'][j], y_Lstm[j], (step + 1) * config.Batch_size, 'lstm', IO_tool.dataset.id_to_label)
-                    # confusion_train_Next = calculate_confusion_matrix(confusion_train_Next, batch['Y'][j], y_Next[j], (step + 1) * config.Batch_size, 'next', IO_tool.dataset.id_to_label)
+                # print(np.reshape(batch['Y'][...,:4], (-1, 1)).shape)
+                # print(np.reshape(now_pred[...,:4], (-1, 1)).shape)
+
+                # print(np.reshape(batch['Y'][...,:4], (-1, 1)).shape)
+                # print(np.reshape(c3d_pred, (-1, 1)).shape)
+
+                # print(np.reshape(batch['next_Y'], (-1,1)).shape)
+                # print(np.reshape(next_pred, (-1, 1)).shape)
+
+                # print(np.reshape(batch['help_Y'][...,:3], (-1, 1)).shape)
+                # print(np.reshape(help_pred[...,:3], (-1, 1)).shape)
 
                 step = step + config.Batch_size*len(available_gpus)
                 train_writer.add_summary(summary, step)
                 pbar_whole.update(config.Batch_size*len(available_gpus))
 
-                if step % 1000 == 0 or (step + 1) == config.tot_steps:
+                target_now = np.reshape(batch['Y'][...,:4], (-1, 1))
+                pred_now = np.reshape(now_pred[...,:4], (-1, 1))
+
+                target_c3d =np.reshape(batch['Y'][...,:4], (-1, 1))
+                pred_c3d = np.reshape(c3d_pred, (-1, 1))
+
+                target_next = np.reshape(batch['next_Y'], (-1,1))
+                pred_next = np.reshape(next_pred, (-1,1))
+
+                target_help = np.reshape(batch['help_Y'][...,:3], (-1, 1))
+                pred_help = np.reshape(help_pred[...,:3], (-1, 1))
+
+                data_collection = {}
+                data_collection['now_train'] = {}
+                data_collection['now_train']['taget'] = target_now
+                data_collection['now_train']['y_pred'] = pred_now
+                data_collection['c3d_train'] = {}
+                data_collection['c3d_train']['taget'] = target_c3d
+                data_collection['c3d_train']['y_pred'] = pred_c3d
+                data_collection['next_train'] = {}
+                data_collection['next_train']['taget'] = target_next
+                data_collection['next_train']['y_pred'] = pred_next
+                data_collection['help_train'] = {}
+                data_collection['help_train']['taget'] = target_help
+                data_collection['help_train']['y_pred'] = pred_help
+                confusion_tool.update_confusion(data_collection, train_writer, step)
+
+                
+
+                if step % 5000 == 0 or (step + 1) == config.tot_steps:
                     validation = True
                     if validation:
                         val_step = step
-                        pbar_val = tqdm(total=(config.tasks * config.Batch_size * len(available_gpus) * config.frames_per_step + len(available_gpus)*config.tasks - 1), leave=False, desc='Validation Generation')
+                        pbar_val = tqdm(total=(config.tasks * config.Batch_size * config.seq_len * len(available_gpus) * config.frames_per_step + len(available_gpus)*config.tasks - 1), leave=False, desc='Validation Generation')
 
                         val_batch = IO_tool.compute_batch(pbar_val, Devices=len(available_gpus), Train=False, augment=False)
 
                         for batch in val_batch:
 
-                            summary, now_pred, c3d_pred, next_pred, c_state, h_state = sess.run([Train_Net.merged, Train_Net.predictions_now,
-                                                                                                Train_Net.predictions_c3d, Train_Net.predictions_next,
-                                                                                                Train_Net.c_out_list, Train_Net.h_out_list],
-                                                                                                feed_dict={Input_net.input_batch: batch['X'],
-                                                                                                            Input_net.labels: batch['Y'],
-                                                                                                            Input_net.help_labels: batch['help_Y'],
-                                                                                                            Input_net.c_input: batch['c'],
-                                                                                                            Input_net.h_input: batch['h'],
-                                                                                                            Input_net.next_labels: batch['next_Y']})
+                            summary, now_pred, next_pred, c3d_pred, help_pred, softmax_now, softmax_next, softmax_help, c_state, h_state = sess.run([Train_Net.merged,
+                                                                                                                                                    Train_Net.predictions_now_conc, Train_Net.predictions_next_conc, Train_Net.predictions_c3d_conc, Train_Net.predictions_help_conc,
+                                                                                                                                                    Train_Net.softmax_now, Train_Net.softmax_next, Train_Net.softmax_help,
+                                                                                                                                                    Train_Net.c_out_list, Train_Net.h_out_list],
+                                                                                                                                                    feed_dict={Input_net.input_batch: batch['X'],
+                                                                                                                                                                Input_net.labels: batch['Y'],
+                                                                                                                                                                Input_net.help_labels: batch['help_Y'],
+                                                                                                                                                                Input_net.c_input: batch['c'],
+                                                                                                                                                                Input_net.h_input: batch['h'],
+                                                                                                                                                                Input_net.next_labels: batch['next_Y']})
 
                             for j in range(len(batch['video_name_collection'])):
                                 for y in range(c_state[0].shape[1]):
                                     video_name = batch['video_name_collection'][j][y]
                                     segment = batch['segment_collection'][j][y][1]
+                                    now_label = batch['Y'][j][y]
+                                    next_label = batch['next_Y'][j][y]
+                                    help_label = batch['help_Y'][j][y]
+                                    now_softmax = softmax_now[j][y, ...]
+                                    next_softmax = softmax_next[j][y, ...]
+                                    help_softmax = softmax_help[j][y, ...]
                                     h = h_state[j][:, y, :]
                                     c = c_state[j][:, y, :]
                                     IO_tool.add_hidden_state(video_name,
                                                 segment,
                                                 h,
                                                 c)
-                                    # IO_tool.add_output_collection(batch['video_name_collection'][j][y],
-                                    #                               batch['segment_collection'][j][y][1],
-                                    #                               multi[j][y],
-                                    #                               batch['multi_next_Y'][j][y],
-                                    #                               forecast[j][y],
-                                    #                               batch['next_Y'][j][y])
+                                    IO_tool.add_output_collection(video_name,
+                                                                  segment,
+                                                                  now_label,
+                                                                  now_softmax,
+                                                                  next_label,
+                                                                  next_softmax,
+                                                                  help_label,
+                                                                  help_softmax)
 
-                                # confusion_val_C3d = calculate_confusion_matrix(confusion_val_C3d, batch['Y'][j], y_c3d[j], (step + 1) * config.Batch_size, 'c3d_val', IO_tool.dataset.id_to_label)
-                                # confusion_val_Lstm = calculate_confusion_matrix(confusion_val_Lstm, batch['Y'][j], y_Lstm[j], (step + 1) * config.Batch_size, 'lstm_val', IO_tool.dataset.id_to_label)
-                                # confusion_val_Next = calculate_confusion_matrix(confusion_val_Next, batch['Y'][j], y_Next[j], (step + 1) * config.Batch_size, 'next_val', IO_tool.dataset.id_to_label)
+                                
+
+                                target_now = np.reshape(batch['Y'][...,:4], (-1, 1))
+                                pred_now = np.reshape(now_pred[...,:4], (-1, 1))
+
+                                target_c3d =np.reshape(batch['Y'][...,:4], (-1, 1))
+                                pred_c3d = np.reshape(c3d_pred, (-1, 1))
+
+                                target_next = np.reshape(batch['next_Y'], (-1,1))
+                                pred_next = np.reshape(next_pred, (-1,1))
+
+                                target_help = np.reshape(batch['help_Y'][...,:3], (-1, 1))
+                                pred_help = np.reshape(help_pred[...,:3], (-1, 1))
+
+                                data_collection = {}
+                                data_collection['now_train'] = {}
+                                data_collection['now_train']['taget'] = target_now
+                                data_collection['now_train']['y_pred'] = pred_now
+                                data_collection['c3d_train'] = {}
+                                data_collection['c3d_train']['taget'] = target_c3d
+                                data_collection['c3d_train']['y_pred'] = pred_c3d
+                                data_collection['next_train'] = {}
+                                data_collection['next_train']['taget'] = target_next
+                                data_collection['next_train']['y_pred'] = pred_next
+                                data_collection['help_train'] = {}
+                                data_collection['help_train']['taget'] = target_help
+                                data_collection['help_train']['y_pred'] = pred_help
+                                confusion_tool.update_confusion(data_collection, val_writer, step)
                             val_writer.add_summary(summary, val_step + config.Batch_size*len(available_gpus))
                             val_step += 1
 
                     IO_tool.save_hidden_state_collection()
-                    # IO_tool.save_output_collection()
+                    IO_tool.save_output_collection()
                     IO_tool.hidden_states_statistics()
-                    # confusion_train_Lstm = np.zeros((number_of_classes, number_of_classes))
-                    # confusion_train_C3d = np.zeros((number_of_classes, number_of_classes))
-                    # confusion_train_Next = np.zeros((number_of_classes, number_of_classes))
-                    # confusion_val_Lstm = np.zeros((number_of_classes, number_of_classes))
-                    # confusion_val_C3d = np.zeros((number_of_classes, number_of_classes))
-                    # confusion_val_Next = np.zeros((number_of_classes, number_of_classes))
                     whole_saver.save(sess, config.model_filename, global_step=step)
 
 

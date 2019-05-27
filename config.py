@@ -10,11 +10,13 @@ frames_per_step = 6
 window_size = 1
 load_previous_weigth = False
 load_pretrained_weigth = False
+load_c3d = True
 model_filename = './checkpoint/Net_weigths.model'
-deploy_folder = './deploy/model/activity_network_model'
+deploy_folder = './Help-System/model/activity_network_model'
 tot_steps = 1000000
-processes = 12
-tasks = 10
+processes = 20
+tasks = 25
+val_task = 10
 reuse_HSM = True
 reuse_output_collection = False
 Action = True
@@ -74,3 +76,9 @@ iccv_json = ['Long jump.json', 'Triple jump.json']
 iccv__annotation = breakfast_annotation = 'dataset/iccv.json'
 dataset = 'Ocado'
 breakfast_fps = 15
+
+
+#confusion
+reset_confusion_step = 20000
+update_confusion = 10000
+val_step = 5000

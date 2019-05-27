@@ -20,7 +20,12 @@
 /dataset/preprocessed
 /.vscode/settings.json
 /excluded_video
-/deploy/openpose
-/deploy/_pycache_
-/deploy/tensorboardLogs
+/deploy
+/deploy/model
 /deploy_writer
+dataset/labels_user31.json
+dataset/labels_user11.json
+dataset/labels_user12.json
+dataset/labels_user21.json
+dataset/labels_user22.json
+Help-System/

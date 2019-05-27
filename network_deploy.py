@@ -56,23 +56,23 @@ class activity_network:
                     'bc5b': self._variable_with_weight_decay('bc5b', [512], 0.04, 0.0)}
 
             with tf.name_scope("Input"):
-                self.input_batch = tf.squeeze(Input_manager.input_batch[device_j, :, :, :, :, :])
+                self.input_batch = Input_manager.input_batch[device_j, :, :, :, :, :]
                 self.input_batch.set_shape([None, config.seq_len, config.frames_per_step, config.out_H, config.out_W, config.input_channels])
                 self.batch_size = tf.shape(self.input_batch)[0]
-                self.h_input = tf.squeeze(Input_manager.h_input[device_j, :, :, :])
+                self.h_input = Input_manager.h_input[device_j, :, :, :]
                 self.h_input.set_shape([len(config.encoder_lstm_layers), None, config.lstm_units])
-                self.c_input = tf.squeeze(Input_manager.c_input[device_j, :, :, :])
+                self.c_input = Input_manager.c_input[device_j, :, :, :]
                 self.c_input.set_shape([len(config.encoder_lstm_layers), None, config.lstm_units])
 
             with tf.name_scope("Now_Target"):
-                self.labels = tf.squeeze(Input_manager.labels[device_j, :, :])
+                self.labels = Input_manager.labels[device_j, :, :]
                 now_dec_input = tf.concat([tf.fill([self.batch_size, 1], IO_tool.dataset.word_to_id['go']), self.labels], 1)
                 self.now_one_hot_label= tf.one_hot(self.labels, depth = self.out_vocab_size)
                 now_dec_embed_input = tf.nn.embedding_lookup(Input_manager.dec_embeddings, now_dec_input)
                 now_target_len = tf.ones(shape=(self.batch_size), dtype=tf.int32)*(config.seq_len + 1)
             
             with tf.name_scope("Help_Target"):
-                self.help_labels = tf.squeeze(Input_manager.help_labels[device_j, :, :])
+                self.help_labels = Input_manager.help_labels[device_j, :, :]
                 self.help_labels.set_shape([None, 4])
                 help_dec_input = tf.concat([tf.fill([self.batch_size, 1], IO_tool.dataset.word_to_id['go']), self.help_labels], 1)
                 self.help_one_hot_label= tf.one_hot(self.help_labels, depth = self.out_vocab_size)
@@ -80,7 +80,7 @@ class activity_network:
                 help_target_len = tf.ones(shape=(self.batch_size), dtype=tf.int32)*(4)
 
             with tf.name_scope("Next_Target"):
-                self.next_labels = tf.squeeze(Input_manager.next_labels[device_j, :])
+                self.next_labels = Input_manager.next_labels[device_j, :]
                 self.next_one_hot_label= tf.one_hot(self.next_labels, depth = self.out_vocab_size)
                 
             def C3d(Tensor):

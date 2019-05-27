@@ -50,7 +50,10 @@ class IO_manager:
                     'segment_collection': segment_collection}
 
         pool = mp.Pool(processes=config.processes)
-        ready_batch = pool.map(multiprocess_batch, range(0, config.tasks))
+        if Train:
+            ready_batch = pool.map(multiprocess_batch, range(0, config.tasks))
+        else:
+            ready_batch = pool.map(multiprocess_batch, range(0, config.val_tasks))
         if not config.use_prep:
             ready_batch = self.add_pose(ready_batch, self.sess, augment)
         # ready_batch = self.group_batches(ready_batch, Devices, pbar)
@@ -63,7 +66,10 @@ class IO_manager:
         random.seed(time.time())
         batch_segment_collection = []
         batch_video_name_collection = []
-        batch = np.zeros(shape=(Devices, config.Batch_size, config.seq_len, config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=np.uint8)
+        if config.use_prep:
+            batch = np.zeros(shape=(Devices, config.Batch_size, config.seq_len, config.frames_per_step, config.out_H, config.out_W, 7), dtype=np.uint8)
+        else:
+            batch = np.zeros(shape=(Devices, config.Batch_size, config.seq_len, config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=np.uint8)
         labels = np.zeros(shape=(Devices, config.Batch_size,config.seq_len + 1), dtype=int)
         help_labels = np.zeros(shape=(Devices, config.Batch_size, 4), dtype=int)
         next_labels = np.zeros(shape=(Devices, config.Batch_size), dtype=int)
@@ -92,8 +98,8 @@ class IO_manager:
                     next_label = self.dataset.word_to_id[self.dataset.id_to_label[next_label]]
                     path = entry['path']
                     segment = entry['segment']
-                    help_label = entry['help']
-                    help_label = self.dataset.id_to_label[help_label].split(' ')
+                    help_label_raw = entry['help']
+                    help_label = self.dataset.id_to_label[help_label_raw].split(' ')
                     if config.use_prep:
                         one_input, frame_list = self.extract_preprocessed_one_input(path, segment, pbar)
                     else:
@@ -116,7 +122,7 @@ class IO_manager:
                         segment_collection.append(segment)
                         video_name_collection.append(path)
                         next_labels[d, j] = next_label
-                        for n in range(2):
+                        for n in range(3):
                             if n > len(help_label) - 1:
                                 help_label_step = self.dataset.word_to_id['sil']
                             else:
@@ -191,7 +197,7 @@ class IO_manager:
             pass
         return final_label
     def extract_preprocessed_one_input(self, video_path, segment, pbar):
-        one_input = np.zeros(shape=(config.frames_per_step, config.op_input_height, config.op_input_width, 7), dtype=float)
+        one_input = np.zeros(shape=(config.frames_per_step, config.out_H, config.out_W, 7), dtype=float)
         extracted_frames = {}
         frame_list = []
         try:
@@ -371,18 +377,18 @@ class IO_manager:
         self.hidden_states_collection[video_name][frame]['h'] = h
         self.hidden_states_collection[video_name][frame]['c'] = c
         self.hidden_states_collection[video_name][frame]['number_of_visits'] += 1
-
-    def add_output_collection(self, video_name, frame, multi, multi_target, forecast, forecast_target):
+        
+    def add_output_collection(self, video_name, segment, now_label, now_softmax, next_label, next_softmax, help_label, help_softmax):
         if video_name not in self.output_collection:
             self.output_collection[video_name] = {}
-        if frame not in self.output_collection[video_name]:
-                self.output_collection[video_name][frame] = {}
-                self.output_collection[video_name][frame]['number_of_visits'] = 0
-        self.output_collection[video_name][frame]['multi'] = multi
-        self.output_collection[video_name][frame]['multi_target'] = multi_target
-        self.output_collection[video_name][frame]['forecast'] = forecast
-        self.output_collection[video_name][frame]['forecast_target'] = forecast_target
-        self.output_collection[video_name][frame]['number_of_visits'] += 1
+        if segment not in self.output_collection[video_name]:
+                self.output_collection[video_name][segment] = {}
+        self.output_collection[video_name][segment]['now_label'] = now_label
+        self.output_collection[video_name][segment]['now_softmax'] = now_softmax
+        self.output_collection[video_name][segment]['next_label'] = next_label
+        self.output_collection[video_name][segment]['next_softmax'] = next_softmax
+        self.output_collection[video_name][segment]['help_label'] = help_label
+        self.output_collection[video_name][segment]['help_softmax'] = help_softmax
 
     def hidden_states_statistics(self):
         number_of_visits = 0

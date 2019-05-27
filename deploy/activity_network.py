@@ -79,7 +79,7 @@ class activity_network:
         # pafMat, heatMat = self.IO_tool.openpose.compute_pose_frame(img)
         return pafMat, heatMat
 
-    def compound_channel(self, img, flow, heatMat, pafMat):
+    def compound_channel(self, img, flow, pafMat, heatMat):
         # stack rgb, flow, heatMat and pafMat
         frame = np.zeros(shape=(config.out_H, config.out_W, 7), dtype=np.uint8)
         shape_img = img.shape
@@ -102,6 +102,8 @@ class activity_network:
 
     def compound_second_frames(self, frames):
         # group frames from one second
+        # first in list is oldest
+        # last is the newest
         number_of_frames = len(frames)
         if number_of_frames != config.frames_per_step:
             raise ValueError('too many frames per second')

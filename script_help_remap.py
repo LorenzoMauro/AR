@@ -20,7 +20,7 @@ map_1 = {
     'get torch from technician under diverter and put on the table': 'get_from_technician_and_put_on_the_table torch under_diverter',
     'get spray-bottle from technician near guard and put on the table':'get_from_technician_and_put_on_the_table spray_bottle near_guard',
     'get torch from technician on ladder and put on the table':'get_from_technician_and_put_on_the_table torch on_ladder',
-    'grasp guard and put on diverter': 'grasp_and_put_on_diverter guard guard-support',
+    'grasp guard and put on diverter': 'grasp_and_put_on_diverter guard guard_support',
     'remove guard and put down': 'remove_and_put_down guard under_diverter'
 
 }

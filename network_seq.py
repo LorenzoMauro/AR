@@ -54,24 +54,24 @@ class activity_network:
                     'bc5b': self._variable_with_weight_decay('bc5b', [512], 0.04, 0.0)}
 
             with tf.name_scope("Input"):
-                self.input_batch = tf.squeeze(Input_manager.input_batch[device_j, :, :, :, :, :])
+                self.input_batch = Input_manager.input_batch[device_j, :, :, :, :, :]
                 self.input_batch = tf.cast(self.input_batch, tf.float32)
                 self.input_batch.set_shape([None, config.seq_len, config.frames_per_step, config.out_H, config.out_W, config.input_channels])
                 self.batch_size = tf.shape(self.input_batch)[0]
-                self.h_input = tf.squeeze(Input_manager.h_input[device_j, :, :, :])
+                self.h_input = Input_manager.h_input[device_j, :, :, :]
                 self.h_input.set_shape([len(config.encoder_lstm_layers), None, config.lstm_units])
-                self.c_input = tf.squeeze(Input_manager.c_input[device_j, :, :, :])
+                self.c_input = Input_manager.c_input[device_j, :, :, :]
                 self.c_input.set_shape([len(config.encoder_lstm_layers), None, config.lstm_units])
 
             with tf.name_scope("Now_Target"):
-                self.labels = tf.squeeze(Input_manager.labels[device_j, :, :])
+                self.labels = Input_manager.labels[device_j, :, :]
                 now_dec_input = tf.concat([tf.fill([self.batch_size, 1], IO_tool.dataset.word_to_id['go']), self.labels], 1)
                 self.now_one_hot_label= tf.one_hot(self.labels, depth = self.out_vocab_size)
                 now_dec_embed_input = tf.nn.embedding_lookup(Input_manager.dec_embeddings, now_dec_input)
                 now_target_len = tf.ones(shape=(self.batch_size), dtype=tf.int32)*(config.seq_len + 1)
             
             with tf.name_scope("Help_Target"):
-                self.help_labels = tf.squeeze(Input_manager.help_labels[device_j, :, :])
+                self.help_labels = Input_manager.help_labels[device_j, :, :]
                 self.help_labels.set_shape([None, 4])
                 help_dec_input = tf.concat([tf.fill([self.batch_size, 1], IO_tool.dataset.word_to_id['go']), self.help_labels], 1)
                 self.help_one_hot_label= tf.one_hot(self.help_labels, depth = self.out_vocab_size)
@@ -79,7 +79,7 @@ class activity_network:
                 help_target_len = tf.ones(shape=(self.batch_size), dtype=tf.int32)*(4)
 
             with tf.name_scope("Next_Target"):
-                self.next_labels = tf.squeeze(Input_manager.next_labels[device_j, :])
+                self.next_labels = Input_manager.next_labels[device_j, :]
                 self.next_one_hot_label= tf.one_hot(self.next_labels, depth = self.out_vocab_size)
                 
             def C3d(Tensor):
@@ -296,8 +296,8 @@ class Training:
                         help_inf_pred_conc = Networks[Net].help_inference_one_hot_prediction
                         help_label_conc = Networks[Net].help_one_hot_label
                         predictions_c3d_conc = Networks[Net].predictions_c3d
-                        predictions_now_conc = Networks[Net].now_predictions
-                        predictions_help_conc = Networks[Net].help_predictions
+                        predictions_now_conc = Networks[Net].inference_predictions
+                        predictions_help_conc = Networks[Net].help_inference_predictions
                         predictions_next_conc = Networks[Net].next_predictions
                         z +=1
                     else:
@@ -311,9 +311,16 @@ class Training:
                         help_inf_pred_conc = tf.concat([help_inf_pred_conc, Networks[Net].help_inference_one_hot_prediction], axis=0)
                         help_label_conc = tf.concat([help_label_conc, Networks[Net].help_one_hot_label], axis=0)
                         predictions_c3d_conc = tf.concat([predictions_c3d_conc,Networks[Net].predictions_c3d], axis=0)
-                        predictions_now_conc = tf.concat([predictions_now_conc,Networks[Net].now_predictions], axis=0)
-                        predictions_help_conc = tf.concat([predictions_help_conc,Networks[Net].help_predictions], axis=0)
+                        predictions_now_conc = tf.concat([predictions_now_conc,Networks[Net].inference_predictions], axis=0)
+                        predictions_help_conc = tf.concat([predictions_help_conc,Networks[Net].help_inference_predictions], axis=0)
                         predictions_next_conc = tf.concat([predictions_next_conc,Networks[Net].next_predictions], axis=0)
+
+                help_action_target = help_label_conc[...,0,:]
+                help_obj_target = help_label_conc[...,1,:]
+                help_loc_target = help_label_conc[...,2,:]
+                help_action_pred = help_inf_pred_conc[...,0,:]
+                help_obj_pred = help_inf_pred_conc[...,1,:]
+                help_loc_pred = help_inf_pred_conc[...,2,:]
 
                 with tf.name_scope('Metrics_calculation'):
                     c3d_precision, c3d_recall, c3d_f1, c3d_accuracy = self.accuracy_metrics(c3d_pred_conc, now_label_conc[:,:-1,:])
@@ -322,9 +329,9 @@ class Training:
                     next_precision, next_recall, next_f1, next_accuracy = self.accuracy_metrics(next_pred_conc, next_label_conc)
                     help_precision, help_recall, help_f1, help_accuracy = self.accuracy_metrics(help_pred_conc, help_label_conc)
                     help_inference_precision, help_inference_recall, help_inference_f1, inference_accuracy = self.accuracy_metrics(help_inf_pred_conc, help_label_conc)
-                    action_inference_precision, action_inference_recall, action_inference_f1, action_accuracy = self.accuracy_metrics(help_inf_pred_conc[...,1], help_label_conc[...,1])
-                    object_inference_precision, object_inference_recall, object_inference_f1, object_inference_accuracy = self.accuracy_metrics(help_inf_pred_conc[...,2], help_label_conc[...,2])
-                    place_inference_precision, place_inference_recall, place_inference_f1, place_inference_accuracy = self.accuracy_metrics(help_inf_pred_conc[...,3], help_label_conc[...,3])
+                    action_inference_precision, action_inference_recall, action_inference_f1, action_accuracy = self.accuracy_metrics(help_action_pred, help_action_target)
+                    object_inference_precision, object_inference_recall, object_inference_f1, object_inference_accuracy = self.accuracy_metrics(help_obj_pred, help_action_target)
+                    place_inference_precision, place_inference_recall, place_inference_f1, place_inference_accuracy = self.accuracy_metrics(help_loc_pred, help_loc_target)
             with tf.name_scope('Loss'):
                 for Net in Networks:
                     z = 0
@@ -378,7 +385,6 @@ class Training:
                 learning_rate = tf.train.exponential_decay(starter_learning_rate, self.global_step,
                                                             1000, 0.9)
                 
-                pp.pprint(Train_variable)
                 self.train_op = tf.contrib.layers.optimize_loss(
                     loss=total_loss,
                     global_step=self.global_step,
@@ -393,42 +399,77 @@ class Training:
                 # tf.summary.histogram("c_in", self.c_input)
                 # tf.summary.histogram("h_in", self.h_input)
                 # # tf.summary.histogram("labels_target", argmax_labels)
-                tf.summary.histogram("Now_classification", predictions_now_conc)
-                tf.summary.histogram("Help_classification", predictions_help_conc)
-                tf.summary.histogram("Next_classification", predictions_next_conc)
-                tf.summary.histogram("c3d_classification", predictions_c3d_conc)
-                tf.summary.histogram("Now_label", tf.argmax(input=now_label_conc, axis=-1))
-                tf.summary.histogram("Help_label", tf.argmax(input=help_label_conc, axis=-1))
-                tf.summary.histogram("Next_label", tf.argmax(input=next_label_conc, axis=-1))
-                tf.summary.scalar('Lstm_loss', now_loss_sum)
+                with tf.name_scope('Help'):
+                    tf.summary.histogram("help_action_target", tf.argmax(input=help_action_target, axis=1, name="help_action_target"))
+                    tf.summary.histogram("help_obj_target", tf.argmax(input=help_obj_target, axis=1, name="help_obj_target"))
+                    tf.summary.histogram("help_loc_target", tf.argmax(input=help_loc_target, axis=1, name="help_loc_target"))
+                    tf.summary.histogram("help_action_pred", tf.argmax(input=help_action_pred, axis=1, name="help_action_pred"))
+                    tf.summary.histogram("help_obj_pred", tf.argmax(input=help_obj_pred, axis=1, name="help_obj_pred"))
+                    tf.summary.histogram("help_loc_pred", tf.argmax(input=help_loc_pred, axis=1, name="help_loc_pred"))
+                    tf.summary.histogram("Help_classification", predictions_help_conc)
+                    tf.summary.histogram("Help_label", tf.argmax(input=help_label_conc, axis=-1))
+                    tf.summary.scalar('help_Loss', help_loss_sum)
+                    tf.summary.scalar('help_recall', help_recall)
+                    tf.summary.scalar('help_inference_recall', help_inference_recall)
+                    tf.summary.scalar('action_inference_recall', action_inference_recall)
+                    tf.summary.scalar('object_inference_recall', object_inference_recall)
+                    tf.summary.scalar('place_inference_recall', place_inference_recall)
+
+                with tf.name_scope('Now'):
+                    tf.summary.histogram("Now_classification", predictions_now_conc)
+                    tf.summary.histogram("Now_label", tf.argmax(input=now_label_conc, axis=-1))
+                    tf.summary.scalar('Now_Loss', now_loss_sum)
+                    tf.summary.scalar('now_recall', now_recall)
+                    tf.summary.scalar('now_inference_recall', inference_recall)
+
+                with tf.name_scope('Next'):
+                    tf.summary.histogram("Next_classification", predictions_next_conc)
+                    tf.summary.histogram("Next_label", tf.argmax(input=next_label_conc, axis=-1))
+                    tf.summary.scalar('Next_Loss', next_loss_sum)
+                    tf.summary.scalar('next_recall', next_recall)
+
+                with tf.name_scope('C3d'):
+                    tf.summary.histogram("c3d_classification", predictions_c3d_conc)
+                    tf.summary.scalar('C3d_Loss', c3d_loss_sum)
+                    tf.summary.scalar('c3d_recall', c3d_recall)
+
                 tf.summary.scalar('auto_enc_loss_sum', auto_enc_loss_sum)
-                tf.summary.scalar('C3d_Loss', c3d_loss_sum)
-                tf.summary.scalar('Now_Loss', now_loss_sum)
-                tf.summary.scalar('help_Loss', help_loss_sum)
-                tf.summary.scalar('Next_Loss', next_loss_sum)
-                tf.summary.scalar('now_recall', now_recall)
-                tf.summary.scalar('now_inference_recall', inference_recall)
-                tf.summary.scalar('help_recall', help_recall)
-                tf.summary.scalar('help_inference_recall', help_inference_recall)
-                tf.summary.scalar('action_inference_recall', action_inference_recall)
-                tf.summary.scalar('object_inference_recall', object_inference_recall)
-                tf.summary.scalar('place_inference_recall', place_inference_recall)
-                tf.summary.scalar('next_recall', next_recall)
-                tf.summary.scalar('c3d_recall', c3d_recall)
                 self.merged = tf.summary.merge_all()
+
+                with tf.name_scope('confusion_plot'):
+                    self.confusion_image = tf.placeholder(tf.uint8, shape=(None, None, None, None), name="Confusion")
+                    self.now_train_confusion = tf.summary.image('now_train', self.confusion_image)
+                    self.c3d_train_confusion = tf.summary.image('c3d_train', self.confusion_image)
+                    self.next_train_confusion = tf.summary.image('next_train', self.confusion_image)
+                    self.help_train_confusion = tf.summary.image('help_train', self.confusion_image)
+                    self.now_val_confusion = tf.summary.image('now_val', self.confusion_image)
+                    self.c3d_val_confusion = tf.summary.image('c3d_val', self.confusion_image)
+                    self.next_val_confusion = tf.summary.image('next_val', self.confusion_image)
+                    self.help_val_confusion = tf.summary.image('help_val', self.confusion_image)
+
 
             with tf.name_scope('Outputs'):
                 self.predictions_now = []
                 self.predictions_next = []
                 self.predictions_c3d = []
+                self.softmax_now = []
+                self.softmax_next = []
+                self.softmax_help = []
                 self.c_out_list = []
                 self.h_out_list = []
                 for Net in Networks:
                     self.predictions_now.append(Networks[Net].now_predictions)
                     self.predictions_next.append(Networks[Net].next_predictions)
                     self.predictions_c3d.append(Networks[Net].predictions_c3d)
+                    self.softmax_now.append(Networks[Net].inference_softmax)
+                    self.softmax_next.append(Networks[Net].next_softmax)
+                    self.softmax_help.append(Networks[Net].help_inference_softmax)
                     self.c_out_list.append(Networks[Net].c_out)
                     self.h_out_list.append(Networks[Net].h_out)
+                self.predictions_now_conc = predictions_now_conc
+                self.predictions_next_conc = predictions_next_conc
+                self.predictions_c3d_conc = predictions_c3d_conc
+                self.predictions_help_conc = predictions_help_conc
 
             with tf.name_scope("Initializer"):
                 init_global = tf.global_variables_initializer()
