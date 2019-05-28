@@ -243,7 +243,7 @@ class activity_network:
                 with tf.variable_scope("c3d_classifier_dense", reuse=tf.AUTO_REUSE):
                     out_cd = tf.layers.dense(x, config.pre_class, name="c3d_dense_1")
                     out_cd_2 = tf.layers.dense(out_cd, config.pre_class, name="c3d_dense_2")
-                    logit = tf.layers.dense(out_cd_2, self.number_of_classes, name="c3d_dense_3")
+                    logit = tf.tanh(tf.layers.dense(out_cd_2, self.number_of_classes, name="c3d_dense_3"))
                 return logit
 
             with tf.name_scope('c3d_classifier'):
