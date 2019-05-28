@@ -363,7 +363,7 @@ class Training:
 
                         with tf.name_scope("Next_Loss"):
                             cross_entropy_Next_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].next_one_hot_label, logits=Networks[Net].next_logit)
-                            next_loss = tf.reduce_sum(tf.tensordot(self.next_weight[z,...], cross_entropy_Next_vec, axis=1))
+                            next_loss = tf.reduce_sum(tf.tensordot(self.next_weight[z,...], cross_entropy_Next_vec, axes=1))
 
                         with tf.name_scope("Autoencoder_Loss"):
                             auto_enc_loss=tf.reduce_sum(tf.square(Networks[Net].autoenc_out-Networks[Net].c3d_out))
