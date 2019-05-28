@@ -39,6 +39,9 @@ class Dataset:
             self.train_collection = self.load('train_collection')
             self.test_collection = self.load('test_collection')
             self.ordered_collection = self.load('ordered_collection')
+            self.now_weigth = self.load('now_weigth')
+            self.next_weigth = self.load('next_weigth')
+            self.help_weigth = self.load('help_weigth')
         else:
             self.generate_dataset()
 
