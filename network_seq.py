@@ -351,19 +351,19 @@ class Training:
                     with tf.name_scope(Net):
                         with tf.name_scope("C3d_Loss"):
                             cross_entropy_c3d_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].logit_c3d)
-                            c3d_loss = tf.reduce_sum(tf.matmul(self.now_weight, cross_entropy_c3d_vec))
+                            c3d_loss = tf.reduce_sum(tf.matmul(self.now_weight[z,...], cross_entropy_c3d_vec))
 
                         with tf.name_scope("Now_Loss"):
                             cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].inference_logit[:,:-1,:])
-                            now_loss = tf.reduce_sum(tf.matmul(self.now_weight[:,:-1], cross_entropy_Now_vec))
+                            now_loss = tf.reduce_sum(tf.matmul(self.now_weight[z,:-1], cross_entropy_Now_vec))
 
                         with tf.name_scope("help_Loss"):
                             cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].help_one_hot_label[:,:-1,:], logits=Networks[Net].help_inference_logit[:,:-1,:])
-                            help_loss = tf.reduce_sum(tf.matmul(self.help_weight, cross_entropy_help_vec))
+                            help_loss = tf.reduce_sum(tf.matmul(self.help_weight[z,...], cross_entropy_help_vec))
 
                         with tf.name_scope("Next_Loss"):
                             cross_entropy_Next_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].next_one_hot_label, logits=Networks[Net].next_logit)
-                            next_loss = tf.reduce_sum(tf.matmul(self.next_weight, cross_entropy_Next_vec))
+                            next_loss = tf.reduce_sum(tf.matmul(self.next_weight[z,...], cross_entropy_Next_vec))
 
                         with tf.name_scope("Autoencoder_Loss"):
                             auto_enc_loss=tf.reduce_sum(tf.square(Networks[Net].autoenc_out-Networks[Net].c3d_out))
@@ -374,13 +374,13 @@ class Training:
                             next_loss_sum = next_loss
                             auto_enc_loss_sum = auto_enc_loss
                             help_loss_sum = help_loss
-                            z += 1
                         else:
                             c3d_loss_sum += c3d_loss
                             now_loss_sum += now_loss
                             next_loss_sum += next_loss
                             auto_enc_loss_sum += auto_enc_loss
                             help_loss_sum += help_loss
+                        z += 1
 
                 with tf.name_scope("Global_Loss"):
                     c3d_loss_sum = tf.cast(c3d_loss_sum, tf.float64)
