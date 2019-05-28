@@ -51,7 +51,7 @@ snow_ball_classes = 3
 op_input_width = 368
 op_input_height = 368
 show_pic = False
-seq_len = 4
+seq_len = 1
 
 #[Dataset]
 validation_fraction = 0.2
