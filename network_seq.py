@@ -341,11 +341,11 @@ class Training:
                             c3d_loss = tf.reduce_sum(cross_entropy_c3d_vec)
 
                         with tf.name_scope("Now_Loss"):
-                            cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label, logits=Networks[Net].inference_logit)
+                            cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].inference_logit[:,:-1,:])
                             now_loss = tf.reduce_sum(cross_entropy_Now_vec)
 
                         with tf.name_scope("help_Loss"):
-                            cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].help_one_hot_label, logits=Networks[Net].help_inference_logit)
+                            cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].help_one_hot_label[:,:-1,:], logits=Networks[Net].help_inference_logit[:,:-1,:])
                             help_loss = tf.reduce_sum(cross_entropy_help_vec)
 
                         with tf.name_scope("Next_Loss"):
