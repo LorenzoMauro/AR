@@ -80,7 +80,7 @@ class IO_manager:
         c = np.zeros(shape=(Devices, len(config.encoder_lstm_layers), config.Batch_size, config.hidden_states_dim), dtype=float)
         h = np.zeros(shape=(Devices, len(config.encoder_lstm_layers), config.Batch_size, config.hidden_states_dim), dtype=float)
         now_weight = np.zeros(shape=(Devices, config.Batch_size, config.seq_len + 1), dtype=float)
-        next_weight = np.zeros(shape=(Devices, config.Batch_size, 1), dtype=float)
+        next_weight = np.zeros(shape=(Devices, config.Batch_size), dtype=float)
         help_weight = np.zeros(shape=(Devices, config.Batch_size, 4), dtype=float)
 
         # Selecting correct dataset
