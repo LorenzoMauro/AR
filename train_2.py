@@ -113,12 +113,11 @@ def train():
                 train_writer.add_summary(summary, step)
                 pbar_whole.update(config.Batch_size*len(available_gpus))
 
-                target_now = np.reshape(batch['Y'][...,:4], (-1, 1))
-                pred_now = np.reshape(now_pred[...,:4], (-1, 1))
+                target_now = np.reshape(batch['Y'][...,:config.seq_len], (-1, 1))
+                pred_now = np.reshape(now_pred[...,:config.seq_len], (-1, 1))
 
-                target_c3d =np.reshape(batch['Y'][...,:4], (-1, 1))
+                target_c3d =np.reshape(batch['Y'][...,:config.seq_len], (-1, 1))
                 pred_c3d = np.reshape(c3d_pred, (-1, 1))
-                print(pred_c3d)
 
                 target_next = np.reshape(batch['next_Y'], (-1,1))
                 pred_next = np.reshape(next_pred, (-1,1))
