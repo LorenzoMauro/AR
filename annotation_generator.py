@@ -108,6 +108,9 @@ class Annotation:
             fps = video.get(cv2.CAP_PROP_FPS)
             for index in range(len(activity_dataset[fl])):
                 segment = activity_dataset[fl][index]['milliseconds']
+                # label = activity_dataset[fl][index]['label']
+                # segment_len = float((segment[1] - segment[0]))/1000
+                # print(label, segment_len)
                 frame_start = int((segment[0]*fps)/1000)
                 frame_end = int((segment[1]*fps)/1000)
                 next_collection = []
