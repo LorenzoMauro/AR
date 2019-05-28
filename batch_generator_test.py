@@ -43,12 +43,15 @@ class IO_manager:
 
     def compute_batch(self, pbar, Devices, Train, augment=True):
         def multiprocess_batch(x):
-            X, Y, c, h, video_name_collection, segment_collection, next_label, help_label= self.batch_generator(pbar, Devices, Train)
+            X, Y, c, h, video_name_collection, segment_collection, next_label, help_label, now_weight, next_weight, help_weight= self.batch_generator(pbar, Devices, Train)
             return {'X': X, 'Y': Y, 'c': c, 'h': h,
                     'next_Y': next_label,
                     'help_Y': help_label,
                     'video_name_collection': video_name_collection,
-                    'segment_collection': segment_collection}
+                    'segment_collection': segment_collection,
+                    'now_weight': now_weight,
+                    'next_weight': next_weight,
+                    'help_weight': help_weight}
 
         pool = mp.Pool(processes=config.processes)
         if Train:
@@ -76,6 +79,9 @@ class IO_manager:
         next_labels = np.zeros(shape=(Devices, config.Batch_size), dtype=int)
         c = np.zeros(shape=(Devices, len(config.encoder_lstm_layers), config.Batch_size, config.hidden_states_dim), dtype=float)
         h = np.zeros(shape=(Devices, len(config.encoder_lstm_layers), config.Batch_size, config.hidden_states_dim), dtype=float)
+        now_weight = np.zeros(shape=(Devices, config.Batch_size, config.seq_len + 1), dtype=int)
+        next_weight = np.zeros(shape=(Devices, config.Batch_size, 1), dtype=int)
+        help_weight = np.zeros(shape=(Devices, config.Batch_size, 4), dtype=int)
 
         # Selecting correct dataset
         if Train:
@@ -110,6 +116,7 @@ class IO_manager:
                     
                     batch[d, j, s, :, :, :, :] = one_input
                     labels[d, j, s] = current_label
+                    now_weight[d, j, s] = self.dataset.now_weigth[current_label]
 
 
                     if s == 0:
@@ -123,12 +130,14 @@ class IO_manager:
                         segment_collection.append(segment)
                         video_name_collection.append(path)
                         next_labels[d, j] = next_label
+                        next_weight[d, j] = self.dataset.next_weigth[next_label]
                         for n in range(3):
                             if n > len(help_label) - 1:
                                 help_label_step = self.dataset.word_to_id['sil']
                             else:
                                 help_label_step = self.dataset.word_to_id[help_label[n]]
                             help_labels[d, j, n] = help_label_step
+                            help_weight[d, j, n] = self.dataset.help_weigth[help_label_step]
                         help_labels[d, j, 3] = self.dataset.word_to_id['end']
                         
 
@@ -145,7 +154,7 @@ class IO_manager:
         # pp.pprint(history)
         pbar.update(1)
         pbar.refresh()
-        return batch, labels, c, h, batch_video_name_collection, batch_segment_collection, next_labels, help_labels
+        return batch, labels, c, h, batch_video_name_collection, batch_segment_collection, next_labels, help_labels, now_weight, next_weight, help_weight
 
     def entry_selector(self, dataset,ordered_collection, is_ordered):
         random.seed(time.time())
