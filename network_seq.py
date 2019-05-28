@@ -131,10 +131,6 @@ class activity_network:
                 reshaped_input = tf.reshape(self.input_batch, reshape_shape)
                 c3d_out = C3d(reshaped_input)
                 self.c3d_out = tf.reshape(c3d_out, [-1, config.seq_len, c3d_out.shape[-1]])
-                print(self.input_batch)
-                print(reshaped_input)
-                print(c3d_out)
-                print(self.c3d_out)
                 # self.c3d_out = tf.map_fn(lambda x: C3d(x), self.input_batch)
 
             with tf.name_scope("Dimension_Encoder"):
@@ -258,10 +254,6 @@ class activity_network:
                 reshaped_c3d_out = tf.reshape(self.c3d_out, [-1,self.c3d_out.shape[-1]])
                 dense_out = c3d_classifier_dense(reshaped_c3d_out)
                 self.logit_c3d = tf.reshape(dense_out, [-1,self.c3d_out.shape[-2],dense_out.shape[-1]])
-                print(self.c3d_out)
-                print(reshaped_c3d_out)
-                print(dense_out)
-                print(self.logit_c3d)
                 # self.logit_c3d = tf.map_fn(lambda x: c3d_classifier_dense(x), self.c3d_out)
                 self.softmax_c3d = tf.nn.softmax(self.logit_c3d)
                 self.predictions_c3d = tf.argmax(input=self.softmax_c3d, axis=2, name="c3d_prediction")
