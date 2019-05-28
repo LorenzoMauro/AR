@@ -54,7 +54,7 @@ class IO_manager:
         if Train:
             ready_batch = pool.map(multiprocess_batch, range(0, config.tasks))
         else:
-            ready_batch = pool.map(multiprocess_batch, range(0, config.val_tasks))
+            ready_batch = pool.map(multiprocess_batch, range(0, config.val_task))
         if not config.use_prep:
             ready_batch = self.add_pose(ready_batch, self.sess, augment)
         # ready_batch = self.group_batches(ready_batch, Devices, pbar)
@@ -214,6 +214,7 @@ class IO_manager:
                     one_input[z, :, :, :] = self.prep_dataset.get_matrix(video_path, frame)
                     z += 1
                 except Exception as e:
+                    print(e)
                     pass
                 pbar.update(1)
         except Exception as e:

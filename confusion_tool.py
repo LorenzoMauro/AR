@@ -98,9 +98,6 @@ class confusion_tool:
         log_file.add_summary(summ, step)
 
     def update_confusion(self,data_collection, log_file, step):
-        if step % config.reset_confusion_step == 0:
-            self.init_matrixes()
-
         for entry in data_collection.keys():
             taget = data_collection[entry]['taget']
             y_pred = data_collection[entry]['y_pred']
@@ -108,6 +105,9 @@ class confusion_tool:
             self.name_to_cm[tensor_name] = self.calculate_confusion_matrix(taget, y_pred, tensor_name)
             if step % config.update_confusion == 0:
                 self.update_plot(self.name_to_cm[tensor_name], step, tensor_name, log_file)
+                
+        if step % config.reset_confusion_step == 0:
+            self.init_matrixes()
 
     def save_confusion(self):
         if not os.path.exists('./results/confusion_matrix/' + folder_name + '/'):
