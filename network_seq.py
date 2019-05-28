@@ -351,22 +351,22 @@ class Training:
                     with tf.name_scope(Net):
                         with tf.name_scope("C3d_Loss"):
                             cross_entropy_c3d_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].logit_c3d)
-                            c3d_loss = tf.reduce_sum(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_c3d_vec, transpose_b=True))
+                            c3d_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_c3d_vec, transpose_b=True))
 
                         with tf.name_scope("Now_Loss"):
                             cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].inference_logit[:,:-1,:])
-                            now_loss = tf.reduce_sum(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_Now_vec, transpose_b=True))
+                            now_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_Now_vec, transpose_b=True))
 
                         with tf.name_scope("help_Loss"):
                             cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].help_one_hot_label[:,:-1,:], logits=Networks[Net].help_inference_logit[:,:-1,:])
-                            help_loss = tf.reduce_sum(tf.matmul(self.help_weight[z,:,:-1 ], cross_entropy_help_vec, transpose_b=True))
+                            help_loss = tf.reduce_mean(tf.matmul(self.help_weight[z,:,:-1 ], cross_entropy_help_vec, transpose_b=True))
 
                         with tf.name_scope("Next_Loss"):
                             cross_entropy_Next_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].next_one_hot_label, logits=Networks[Net].next_logit)
-                            next_loss = tf.reduce_sum(tf.tensordot(self.next_weight[z,...], cross_entropy_Next_vec, axes=1))
+                            next_loss = tf.reduce_mean(tf.tensordot(self.next_weight[z,...], cross_entropy_Next_vec, axes=1))
 
                         with tf.name_scope("Autoencoder_Loss"):
-                            auto_enc_loss=tf.reduce_sum(tf.square(Networks[Net].autoenc_out-Networks[Net].c3d_out))
+                            auto_enc_loss=tf.reduce_mean(tf.square(Networks[Net].autoenc_out-Networks[Net].c3d_out))
 
                         if z == 0:
                             c3d_loss_sum = c3d_loss
@@ -391,14 +391,14 @@ class Training:
                     c3d_par = tf.pow(c3d_recall,1)
                     now_par = tf.pow(inference_recall,1)
                     next_par = tf.pow(next_recall,1)
-                    #total_loss = (c3d_par)*(now_par*(next_par*help_loss_sum + (1-next_par)*next_loss_sum) + (1-now_par)*now_loss_sum) + (1 - c3d_par) * c3d_loss_sum + auto_enc_loss_sum
-                    total_loss = c3d_loss_sum + help_loss_sum + next_loss_sum + now_loss_sum + auto_enc_loss_sum
+                    total_loss = (c3d_par)*(now_par*(next_par*help_loss_sum + (1-next_par)*next_loss_sum) + (1-now_par)*now_loss_sum) + (1 - c3d_par) * c3d_loss_sum + auto_enc_loss_sum
+                    # total_loss = c3d_loss_sum + help_loss_sum + next_loss_sum + now_loss_sum + auto_enc_loss_sum
                     
             with tf.name_scope("Optimizer"):
                 Train_variable = [v for v in self.variables if 'Openpose' not in v.name.split('/')[0]]
                 Train_variable = [v for v in Train_variable if 'MobilenetV1' not in v.name.split('/')[0]]
 
-                starter_learning_rate = 0.0001
+                starter_learning_rate = 0.00001
                 learning_rate = tf.train.exponential_decay(starter_learning_rate, self.global_step,
                                                             1000, 0.9)
                 
@@ -407,7 +407,7 @@ class Training:
                     global_step=self.global_step,
                     learning_rate=learning_rate,
                     optimizer='Adam',
-                    # clip_gradients=config.gradient_clipping_norm,
+                    clip_gradients=config.gradient_clipping_norm,
                     variables=Train_variable)
 
             with tf.name_scope('Summary'):
