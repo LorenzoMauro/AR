@@ -217,6 +217,7 @@ class IO_manager:
                     pass
                 pbar.update(1)
         except Exception as e:
+            print(e)
             pass
         frame_list = extracted_frames.keys()
         return one_input, frame_list
