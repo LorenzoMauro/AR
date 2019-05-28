@@ -401,7 +401,7 @@ class Training:
                     global_step=self.global_step,
                     learning_rate=learning_rate,
                     optimizer='Adam',
-                    clip_gradients=config.gradient_clipping_norm,
+                    # clip_gradients=config.gradient_clipping_norm,
                     variables=Train_variable)
 
             with tf.name_scope('Summary'):
