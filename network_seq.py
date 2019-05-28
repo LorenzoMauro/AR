@@ -243,7 +243,7 @@ class activity_network:
                 with tf.variable_scope("c3d_classifier_dense", reuse=tf.AUTO_REUSE):
                     out_cd = tf.layers.dense(x, config.pre_class, name="c3d_dense_1")
                     out_cd_2 = tf.layers.dense(out_cd, config.pre_class, name="c3d_dense_2")
-                    logit = tf.tanh(tf.layers.dense(out_cd_2, self.number_of_classes, name="c3d_dense_3"))
+                    logit = tf.layers.dense(out_cd_2, self.number_of_classes, name="c3d_dense_3")
                 return logit
 
             with tf.name_scope('c3d_classifier'):
@@ -338,22 +338,22 @@ class Training:
                     with tf.name_scope(Net):
                         with tf.name_scope("C3d_Loss"):
                             cross_entropy_c3d_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].logit_c3d)
-                            c3d_loss = tf.reduce_mean(cross_entropy_c3d_vec)
+                            c3d_loss = tf.reduce_sum(cross_entropy_c3d_vec)
 
                         with tf.name_scope("Now_Loss"):
                             cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label, logits=Networks[Net].inference_logit)
-                            now_loss = tf.reduce_mean(cross_entropy_Now_vec)
+                            now_loss = tf.reduce_sum(cross_entropy_Now_vec)
 
                         with tf.name_scope("help_Loss"):
                             cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].help_one_hot_label, logits=Networks[Net].help_inference_logit)
-                            help_loss = tf.reduce_mean(cross_entropy_help_vec)
+                            help_loss = tf.reduce_sum(cross_entropy_help_vec)
 
                         with tf.name_scope("Next_Loss"):
                             cross_entropy_Next_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].next_one_hot_label, logits=Networks[Net].next_logit)
-                            next_loss = tf.reduce_mean(cross_entropy_Next_vec)
+                            next_loss = tf.reduce_sum(cross_entropy_Next_vec)
 
                         with tf.name_scope("Autoencoder_Loss"):
-                            auto_enc_loss=tf.reduce_mean(tf.square(Networks[Net].autoenc_out-Networks[Net].c3d_out))
+                            auto_enc_loss=tf.reduce_sum(tf.square(Networks[Net].autoenc_out-Networks[Net].c3d_out))
 
                         if z == 0:
                             c3d_loss_sum = c3d_loss
