@@ -402,39 +402,45 @@ class Training:
                 # tf.summary.histogram("c_in", self.c_input)
                 # tf.summary.histogram("h_in", self.h_input)
                 # # tf.summary.histogram("labels_target", argmax_labels)
-                with tf.name_scope('Help'):
-                    tf.summary.histogram("help_action_target", tf.argmax(input=help_action_target, axis=1, name="help_action_target"))
-                    tf.summary.histogram("help_obj_target", tf.argmax(input=help_obj_target, axis=1, name="help_obj_target"))
-                    tf.summary.histogram("help_loc_target", tf.argmax(input=help_loc_target, axis=1, name="help_loc_target"))
-                    tf.summary.histogram("help_action_pred", tf.argmax(input=help_action_pred, axis=1, name="help_action_pred"))
-                    tf.summary.histogram("help_obj_pred", tf.argmax(input=help_obj_pred, axis=1, name="help_obj_pred"))
-                    tf.summary.histogram("help_loc_pred", tf.argmax(input=help_loc_pred, axis=1, name="help_loc_pred"))
-                    tf.summary.histogram("Help_classification", predictions_help_conc)
-                    tf.summary.histogram("Help_label", tf.argmax(input=help_label_conc, axis=-1))
+                with tf.name_scope('Loss'):
                     tf.summary.scalar('help_Loss', help_loss_sum)
-                    tf.summary.scalar('help_recall', help_recall)
+                    tf.summary.scalar('Now_Loss', now_loss_sum)
+                    tf.summary.scalar('Next_Loss', next_loss_sum)
+                    tf.summary.scalar('C3d_Loss', c3d_loss_sum)
+
+                with tf.name_scope('recall'):
+                    tf.summary.scalar('c3d_recall', c3d_recall)
+                    tf.summary.scalar('now_inference_recall', inference_recall)
+                    tf.summary.scalar('next_recall', next_recall)
                     tf.summary.scalar('help_inference_recall', help_inference_recall)
+
+                with tf.name_scope('help_recal_by_word'):
                     tf.summary.scalar('action_inference_recall', action_inference_recall)
                     tf.summary.scalar('object_inference_recall', object_inference_recall)
                     tf.summary.scalar('place_inference_recall', place_inference_recall)
 
+                with tf.name_scope('Help'):
+                    # tf.summary.histogram("help_action_target", tf.argmax(input=help_action_target, axis=1, name="help_action_target"))
+                    # tf.summary.histogram("help_obj_target", tf.argmax(input=help_obj_target, axis=1, name="help_obj_target"))
+                    # tf.summary.histogram("help_loc_target", tf.argmax(input=help_loc_target, axis=1, name="help_loc_target"))
+                    # tf.summary.histogram("help_action_pred", tf.argmax(input=help_action_pred, axis=1, name="help_action_pred"))
+                    # tf.summary.histogram("help_obj_pred", tf.argmax(input=help_obj_pred, axis=1, name="help_obj_pred"))
+                    # tf.summary.histogram("help_loc_pred", tf.argmax(input=help_loc_pred, axis=1, name="help_loc_pred"))
+                    tf.summary.histogram("Help_classification", predictions_help_conc)
+                    tf.summary.histogram("Help_label", tf.argmax(input=help_label_conc, axis=-1))
+                    # tf.summary.scalar('help_recall', help_recall)
+
                 with tf.name_scope('Now'):
                     tf.summary.histogram("Now_classification", predictions_now_conc)
                     tf.summary.histogram("Now_label", tf.argmax(input=now_label_conc, axis=-1))
-                    tf.summary.scalar('Now_Loss', now_loss_sum)
-                    tf.summary.scalar('now_recall', now_recall)
-                    tf.summary.scalar('now_inference_recall', inference_recall)
+                    # tf.summary.scalar('now_recall', now_recall)
 
                 with tf.name_scope('Next'):
                     tf.summary.histogram("Next_classification", predictions_next_conc)
                     tf.summary.histogram("Next_label", tf.argmax(input=next_label_conc, axis=-1))
-                    tf.summary.scalar('Next_Loss', next_loss_sum)
-                    tf.summary.scalar('next_recall', next_recall)
 
                 with tf.name_scope('C3d'):
                     tf.summary.histogram("c3d_classification", predictions_c3d_conc)
-                    tf.summary.scalar('C3d_Loss', c3d_loss_sum)
-                    tf.summary.scalar('c3d_recall', c3d_recall)
 
                 tf.summary.scalar('auto_enc_loss_sum', auto_enc_loss_sum)
                 self.merged = tf.summary.merge_all()
