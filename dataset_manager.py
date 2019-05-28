@@ -25,6 +25,9 @@ class Dataset:
                 os.path.isfile('dataset/id_to_label.pkl') and
                 os.path.isfile('dataset/word_to_id.pkl') and
                 os.path.isfile('dataset/id_to_word.pkl') and
+                os.path.isfile('dataset/now_weigth.pkl') and
+                os.path.isfile('dataset/next_weigth.pkl') and
+                os.path.isfile('dataset/help_weigth.pkl') and
                 not config.rebuild):
 
             self.label_to_id = self.load('label_to_id')
@@ -54,6 +57,7 @@ class Dataset:
         self.save(self.frame_label, 'frame_label')
         self.validation_fraction = config.validation_fraction
         self.collection, self.ordered_collection, self.multi_list, self.couple_count, self.max_history= self.new_collection(self.whole_dataset)
+        self.now_weigth, self.next_weigth, self.help_weigth = self.compute_weight(self.collection)
         non_zero_division = False
         while not non_zero_division:
             self.train_collection, self.test_collection = self.split_dataset_second(self.collection)
@@ -67,6 +71,9 @@ class Dataset:
         self.save(self.train_collection, 'train_collection')
         self.save(self.test_collection, 'test_collection')
         self.save(self.ordered_collection, 'ordered_collection')
+        self.save(self.now_weigth, 'now_weigth')
+        self.save(self.next_weigth, 'next_weigth')
+        self.save(self.help_weigth, 'help_weigth')
         pp.pprint(self.id_to_label)
         pp.pprint(self.id_to_word)
 
@@ -123,6 +130,29 @@ class Dataset:
                     id_to_word[i] = word
                     i += 1
         return word_to_id, id_to_word
+
+    def compute_weight(self, collection):
+        now_frequency_count = np.zeros(shape=(len(self.word_to_id)), dtype=np.float32)
+        next_frequency_count = np.zeros(shape=(len(self.word_to_id)), dtype=np.float32)
+        help_frequency_count = np.zeros(shape=(len(self.word_to_id)), dtype=np.float32)
+
+        for current_label in collection.keys():
+            for next_label in collection[current_label].keys():
+                for help_label in collection[current_label][next_label].keys():
+                    for entry in collection[current_label][next_label][help_label]:
+                        current_label = self.word_to_id[self.id_to_label[entry['now_label']]]
+                        next_label = self.word_to_id[self.id_to_label[entry['next_label']]]
+                        help_label = self.id_to_label[entry['help']].split(' ')
+                        for word_id in help_label:
+                            new_word_id = self.word_to_id[word_id]
+                            help_frequency_count[new_word_id] += 1
+                        now_frequency_count[current_label] += 1
+                        next_frequency_count[next_label] += 1
+        now_frequency_count = (np.max(now_frequency_count) - now_frequency_count +1) / np.mean(now_frequency_count)
+        next_frequency_count = (np.max(next_frequency_count) - next_frequency_count +1) / np.mean(next_frequency_count)
+        help_frequency_count = (np.max(help_frequency_count) - help_frequency_count +1) / np.mean(help_frequency_count)
+
+        return now_frequency_count, next_frequency_count, help_frequency_count
 
     def new_collection(self, dataset):
         collection = {}

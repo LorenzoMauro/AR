@@ -42,7 +42,7 @@ def train():
                     Net_collection['Network_' + str(j)] = activity_network(number_of_classes, Input_net, j, IO_tool)
                     j = j+1
         # with tf.device(available_gpus[-1].name):
-        Train_Net = Training(Net_collection)
+        Train_Net = Training(Net_collection, IO_tool)
         IO_tool.start_openPose()
         train_writer = tf.summary.FileWriter("logdir/train", sess.graph)
         val_writer = tf.summary.FileWriter("logdir/val", sess.graph)
