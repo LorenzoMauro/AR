@@ -83,7 +83,7 @@ class confusion_tool:
         ax.yaxis.tick_left()
 
         for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-            ax.text(j, i, format(cm[i, j], '%.2f') if cm[i,j]>0 else '.', horizontalalignment="center", fontsize=5, verticalalignment='center', color= "black")
+            ax.text(j, i, format(cm[i, j], '.2f') if cm[i,j]>0 else '.', horizontalalignment="center", fontsize=5, verticalalignment='center', color= "black")
             fig.set_tight_layout(True)
 
         if fig.canvas is None:
