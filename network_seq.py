@@ -291,7 +291,7 @@ class Training:
 
             with tf.name_scope('weigth'):
                 self.now_weight = tf.placeholder(tf.float32, shape=(None, None, config.seq_len + 1), name="now_label")
-                self.next_weight = tf.placeholder(tf.float32, shape=(None, None, 1), name="now_label")
+                self.next_weight = tf.placeholder(tf.float32, shape=(None, None), name="now_label")
                 self.help_weight = tf.placeholder(tf.float32, shape=(None, None, 4), name="now_label")
 
 
