@@ -63,7 +63,7 @@ class confusion_tool:
         return cm
 
     def update_plot(self, cm, step, tensor_name, log_file):
-        # cm = confusion / confusion.astype(np.float).sum(axis=1)
+        cm = cm / cm.astype(np.float).sum(axis=0)
         fig = matplotlib.figure.Figure(figsize=(5, 5), dpi=200, facecolor='w', edgecolor='k')
         ax = fig.add_subplot(1, 1, 1)
         im = ax.imshow(cm, cmap='Oranges')
@@ -83,7 +83,7 @@ class confusion_tool:
         ax.yaxis.tick_left()
 
         for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-            ax.text(j, i, format(cm[i, j], 'd') if cm[i,j]!=0 else '.', horizontalalignment="center", fontsize=5, verticalalignment='center', color= "black")
+            ax.text(j, i, format(cm[i, j], '%.2f') if cm[i,j]>0 else '.', horizontalalignment="center", fontsize=5, verticalalignment='center', color= "black")
             fig.set_tight_layout(True)
 
         if fig.canvas is None:
