@@ -392,7 +392,7 @@ class Training:
                     now_par = tf.pow(inference_recall,1)
                     next_par = tf.pow(next_recall,1)
                     #total_loss = (c3d_par)*(now_par*(next_par*help_loss_sum + (1-next_par)*next_loss_sum) + (1-now_par)*now_loss_sum) + (1 - c3d_par) * c3d_loss_sum + auto_enc_loss_sum
-                    total_loss = c3d_loss_sum
+                    total_loss = c3d_loss_sum + help_loss_sum + next_loss_sum + now_loss_sum + auto_enc_loss_sum
                     
             with tf.name_scope("Optimizer"):
                 Train_variable = [v for v in self.variables if 'Openpose' not in v.name.split('/')[0]]
