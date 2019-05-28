@@ -355,7 +355,7 @@ class Training:
 
                         with tf.name_scope("Now_Loss"):
                             cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].inference_logit[:,:-1,:])
-                            now_loss = tf.reduce_sum(tf.matmul(self.now_weight, cross_entropy_Now_vec))
+                            now_loss = tf.reduce_sum(tf.matmul(self.now_weight[:,:-1], cross_entropy_Now_vec))
 
                         with tf.name_scope("help_Loss"):
                             cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].help_one_hot_label[:,:-1,:], logits=Networks[Net].help_inference_logit[:,:-1,:])
