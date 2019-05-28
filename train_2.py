@@ -81,7 +81,7 @@ def train():
                                                                                                         Input_net.next_labels: batch['next_Y'],
                                                                                                         Train_Net.now_weight: batch['now_weight'],
                                                                                                         Train_Net.next_weight: batch['next_weight'],
-                                                                                                        Train_Net.help_weigth: batch['help_weigth']})
+                                                                                                        Train_Net.help_weight: batch['help_weigth']})
 
                 for j in range(len(batch['video_name_collection'])):
                     for y in range(c_state[0].shape[1]):
