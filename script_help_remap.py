@@ -155,8 +155,8 @@ for fl in help_dataset:
         if label not in labels:
             labels.append(label)
     
-# with open(config.kit_help_annotation, 'w') as outfile:
-#     json.dump(help_dataset, outfile)
+with open(config.kit_help_annotation, 'w') as outfile:
+    json.dump(help_dataset, outfile)
 
 labels.sort()
 print('labels')
