@@ -82,3 +82,4 @@ breakfast_fps = 15
 reset_confusion_step = 20000
 update_confusion = 10000
 val_step = 5000
+no_sil_step = 100000

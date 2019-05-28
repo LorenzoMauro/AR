@@ -23,6 +23,7 @@ class IO_manager:
         self.prep_dataset = prep_dataset.prep_dataset()
         self.num_classes = self.dataset.number_of_classes
         self.sess = sess
+        self.no_sil_count = 0
         self.openpose = None
         self.snow_ball_minimum = config.snow_ball_classes
         self.chosen_label = {'now':{}, 'next':{}, 'activity':{}}
@@ -134,6 +135,9 @@ class IO_manager:
                     s = s + 1
                 labels[d, j, s] = self.dataset.word_to_id['end']
                 j = j + 1
+                if self.no_sil_count < config.no_sil_step:
+                    self.no_sil_count += 1
+
             batch_video_name_collection.append(video_name_collection)
             batch_segment_collection.append(segment_collection)
             d = d + 1
@@ -150,6 +154,8 @@ class IO_manager:
         while time_step <= config.seq_len:
             if config.balance_key == 'all':
                 r_now = random.choice(list(dataset.keys()))
+                if r_now == 0 and self.no_sil_count < config.no_sil_step:
+                    continue
                 r_next = random.choice(list(dataset[r_now].keys()))
                 r_help = random.choice(list(dataset[r_now][r_next].keys()))
                 try:

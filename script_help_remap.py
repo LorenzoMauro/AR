@@ -13,12 +13,12 @@ help_dataset = json.loads(json_data)
 map_1 = {
     'get cloth from technician on ladder and put on the table': 'get_from_technician_and_put_on_the_table cloth on_ladder',
     'get cloth from technician under diverter and put on the table': 'get_from_technician_and_put_on_the_table cloth under_diverter',
-    'get spray-bottle from technician near guard-support and put on the table': 'get_from_technician_and_put_on_the_table spray_bottle near_guard_support',
+    'get spray-bottle from technician near guard-support and put on the table': 'get_from_technician_and_put_on_the_table spray_bottle guard_support',
     'get spray-bottle from technician on ladder and put on the table': 'get_from_technician_and_put_on_the_table spray_bottle on_ladder',
     'get spray-bottle from technician under diverter and put on the table': 'get_from_technician_and_put_on_the_table spray_bottle under_diverter',
-    'get torch from technician near guard-support and put on the table': 'get_from_technician_and_put_on_the_table torch near_guard_support',
+    'get torch from technician near guard-support and put on the table': 'get_from_technician_and_put_on_the_table torch guard_support',
     'get torch from technician under diverter and put on the table': 'get_from_technician_and_put_on_the_table torch under_diverter',
-    'get spray-bottle from technician near guard and put on the table':'get_from_technician_and_put_on_the_table spray_bottle near_guard',
+    'get spray-bottle from technician near guard and put on the table':'get_from_technician_and_put_on_the_table spray_bottle guard_support',
     'get torch from technician on ladder and put on the table':'get_from_technician_and_put_on_the_table torch on_ladder',
     'grasp guard and put on diverter': 'grasp_and_put_on_diverter guard guard_support',
     'remove guard and put down': 'remove_and_put_down guard under_diverter'
