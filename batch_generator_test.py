@@ -214,6 +214,7 @@ class IO_manager:
                     one_input[z, :, :, :] = self.prep_dataset.get_matrix(video_path, frame)
                     z += 1
                 except Exception as e:
+                    print(e)
                     pass
                 pbar.update(1)
         except Exception as e:

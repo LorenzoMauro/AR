@@ -330,7 +330,7 @@ class Training:
                     help_precision, help_recall, help_f1, help_accuracy = self.accuracy_metrics(help_pred_conc, help_label_conc)
                     help_inference_precision, help_inference_recall, help_inference_f1, inference_accuracy = self.accuracy_metrics(help_inf_pred_conc, help_label_conc)
                     action_inference_precision, action_inference_recall, action_inference_f1, action_accuracy = self.accuracy_metrics(help_action_pred, help_action_target)
-                    object_inference_precision, object_inference_recall, object_inference_f1, object_inference_accuracy = self.accuracy_metrics(help_obj_pred, help_action_target)
+                    object_inference_precision, object_inference_recall, object_inference_f1, object_inference_accuracy = self.accuracy_metrics(help_obj_pred, help_obj_target)
                     place_inference_precision, place_inference_recall, place_inference_f1, place_inference_accuracy = self.accuracy_metrics(help_loc_pred, help_loc_target)
             with tf.name_scope('Loss'):
                 for Net in Networks:
@@ -375,11 +375,12 @@ class Training:
                     next_loss_sum = tf.cast(next_loss_sum, tf.float64)
                     auto_enc_loss_sum = tf.cast(auto_enc_loss_sum, tf.float64)
                     help_loss_sum = tf.cast(help_loss_sum, tf.float64)
-                    c3d_par = tf.pow(c3d_recall,2)
-                    now_par = tf.pow(inference_recall,8)
-                    next_par = tf.pow(next_recall,4)
-                    total_loss = (c3d_par)*(now_par*(next_par*help_loss_sum + (1-next_par)*next_loss_sum) + (1-now_par)*now_loss_sum) + (1 - c3d_par) * c3d_loss_sum + auto_enc_loss_sum
-
+                    c3d_par = tf.pow(c3d_recall,1)
+                    now_par = tf.pow(inference_recall,1)
+                    next_par = tf.pow(next_recall,1)
+                    #total_loss = (c3d_par)*(now_par*(next_par*help_loss_sum + (1-next_par)*next_loss_sum) + (1-now_par)*now_loss_sum) + (1 - c3d_par) * c3d_loss_sum + auto_enc_loss_sum
+                    total_loss = c3d_loss_sum
+                    
             with tf.name_scope("Optimizer"):
                 Train_variable = [v for v in self.variables if 'Openpose' not in v.name.split('/')[0]]
                 Train_variable = [v for v in Train_variable if 'MobilenetV1' not in v.name.split('/')[0]]
