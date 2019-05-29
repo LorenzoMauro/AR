@@ -10,6 +10,7 @@ import config
 from annotation_generator import Annotation
 import numpy as np
 import copy
+import csv
 
 
 pp = pprint.PrettyPrinter(indent=4)
@@ -28,6 +29,7 @@ class Dataset:
                 os.path.isfile('dataset/now_weigth.pkl') and
                 os.path.isfile('dataset/next_weigth.pkl') and
                 os.path.isfile('dataset/help_weigth.pkl') and
+                os.path.isfile('dataset/comb_count.csv') and
                 not config.rebuild):
 
             self.label_to_id = self.load('label_to_id')
@@ -59,7 +61,7 @@ class Dataset:
         self.save(self.id_to_word, 'id_to_word')
         self.save(self.frame_label, 'frame_label')
         self.validation_fraction = config.validation_fraction
-        self.collection, self.ordered_collection, self.multi_list, self.couple_count, self.max_history= self.new_collection(self.whole_dataset)
+        self.collection, self.ordered_collection, self.multi_list, self.couple_count, self.max_history, self.comb_count= self.new_collection(self.whole_dataset)
         self.now_weigth, self.next_weigth, self.help_weigth = self.compute_weight(self.collection)
         non_zero_division = False
         while not non_zero_division:
@@ -77,6 +79,9 @@ class Dataset:
         self.save(self.now_weigth, 'now_weigth')
         self.save(self.next_weigth, 'next_weigth')
         self.save(self.help_weigth, 'help_weigth')
+        with open('dataset/comb_count.csv', 'w') as f:
+            for key in self.comb_count.keys():
+                f.write("%s,%s\n"%(key,self.comb_count[key]))
         pp.pprint(self.id_to_label)
         pp.pprint(self.id_to_word)
 
@@ -165,6 +170,7 @@ class Dataset:
         graph_list = {}
         video_by_history = {}
         files_path = {}
+        comb_count = {}
 
         for root, dirs, files in os.walk('dataset'):
             for fl in files:
@@ -185,6 +191,7 @@ class Dataset:
             tot_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
             tot_steps = int(tot_frames/(config.window_size*fps))
             label_history = []
+            step_history = []
             if tot_steps is 0:
                 break
             for step in range(tot_steps):
@@ -203,6 +210,7 @@ class Dataset:
                 elif current_label != label_history[-1]:
                     label_history.append(current_label)
 
+
                 if len(label_history) > max_history:
                     max_history = len(label_history)
 
@@ -217,6 +225,19 @@ class Dataset:
                 else:
                     if next_label not in graph_list[current_label]:
                         graph_list[current_label].append(next_label)
+                
+                step_history.append(current_label)
+                comb = ''
+                if step > 2:
+                    for step_label in step_history[-4:]:
+                        comb +=self.id_to_label[step_label] + '-'
+                    comb += self.id_to_label[next_label] + '-' + self.id_to_label[help_label]
+                    comb = comb.replace(' ', '-')
+                    if comb not in comb_count:
+                        comb_count[comb] = 1
+                    else:
+                        comb_count[comb] += 1
+
 
                 couple = str(current_label) + '-' + str(next_label)
                 if couple not in couple_count:
@@ -226,7 +247,8 @@ class Dataset:
 
 
                 entry = {'now_label' : current_label, 'next_label' : next_label, 'all_next_label' : couple,
-                         'path': path, 'segment':segment, 'history':label_history, 'time_step': step, 'help': help_label}
+                         'path': path, 'segment':segment, 'history':label_history, 'time_step': step,
+                         'help': help_label, 'step_history': step_history}
                 if path not in ordered_collection:
                     ordered_collection[path] = {}
                 ordered_collection[path][step] = entry
@@ -287,7 +309,7 @@ class Dataset:
                 transition[i,j] /=  tot_row
 
         pbar.close()
-        return collection, ordered_collection, multi_list, couple_count, max_history
+        return collection, ordered_collection, multi_list, couple_count, max_history, comb_count
 
     def label_calculator(self, frame_list, path, next_current):
         label_clip = {}

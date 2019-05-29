@@ -10,7 +10,7 @@ frames_per_step = 6
 window_size = 1
 load_previous_weigth = True
 load_pretrained_weigth = False
-load_c3d = True
+load_c3d = False
 model_filename = './checkpoint/Net_weigths.model'
 deploy_folder = './Help-System/model/activity_network_model'
 tot_steps = 1000000
@@ -51,7 +51,7 @@ snow_ball_classes = 3
 op_input_width = 368
 op_input_height = 368
 show_pic = False
-seq_len = 1
+seq_len = 4
 
 #[Dataset]
 validation_fraction = 0.2

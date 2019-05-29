@@ -196,9 +196,6 @@ class activity_network:
 
             with tf.name_scope('Now_Decoder_block'):
                 now_decoder, now_output_layer = decoder_lstm(config.lstm_units)
-            with tf.name_scope('Now_Decoder_train'):
-                self.now_logit = train_lstm(encoder_state, now_decoder, now_output_layer, now_dec_embed_input, now_target_len)
-                self.now_softmax, self.now_predictions, self.now_one_hot_prediction = lstm_classifier(self.now_logit)
 
             with tf.name_scope('Now_Decoder_inference'):
                 self.inference_logit = decoding_layer_infer(encoder_state, now_decoder, Input_manager.dec_embeddings, IO_tool.dataset.word_to_id['go'],
@@ -206,11 +203,15 @@ class activity_network:
                                                         self.batch_size)
                 paddings = [[0, 0], [0, (config.seq_len + 1)-tf.shape(self.inference_logit)[1]], [0,0 ]]
                 self.inference_logit = tf.pad(self.inference_logit, paddings, 'CONSTANT', constant_values = 1)
-                self.inference_softmax, self.inference_predictions, self.inference_one_hot_prediction = lstm_classifier(self.inference_logit)                           
+                self.inference_softmax, self.inference_predictions, self.inference_one_hot_prediction = lstm_classifier(self.inference_logit) 
+
+            with tf.name_scope('Now_Decoder_train'):
+                self.now_logit = train_lstm(encoder_state, now_decoder, now_output_layer, now_dec_embed_input, now_target_len)
+                self.now_softmax, self.now_predictions, self.now_one_hot_prediction = lstm_classifier(self.now_logit)                          
 
             with tf.name_scope('Next_classifier'):
-                self.now_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
-                flat_now = tf.contrib.layers.flatten(self.now_softmax)
+                self.inference_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
+                flat_now = tf.contrib.layers.flatten(self.inference_softmax)
                 C_composedVec = tf.concat([encoder_state.c, flat_now], 1)
                 H_composedVec = tf.concat([encoder_state.h, flat_now], 1)
                 new_C = tf.layers.dense(C_composedVec, config.lstm_units)
@@ -230,10 +231,6 @@ class activity_network:
                 help_C = tf.layers.dense(help_C_composedVec, config.lstm_units)
                 help_H = tf.layers.dense(help_H_composedVec, config.lstm_units)
                 help_state = tf.contrib.rnn.LSTMStateTuple(help_C, help_H)
-
-            with tf.name_scope('Help_classifier_train'):
-                self.help_logit = train_lstm(help_state, help_decoder, help_output_layer, help_dec_embed_input, help_target_len)
-                self.help_softmax, self.help_predictions, self.help_one_hot_prediction = lstm_classifier(self.help_logit)
             
             with tf.name_scope('Help_Decoder_inference'):
                 self.help_inference_logit = decoding_layer_infer(help_state, help_decoder, Input_manager.dec_embeddings, IO_tool.dataset.word_to_id['go'],
@@ -242,6 +239,10 @@ class activity_network:
                 paddings = [[0, 0], [0, 4-tf.shape(self.help_inference_logit)[1]], [0,0 ]]
                 self.help_inference_logit = tf.pad(self.help_inference_logit, paddings, 'CONSTANT', constant_values = 1)
                 self.help_inference_softmax, self.help_inference_predictions, self.help_inference_one_hot_prediction = lstm_classifier(self.help_inference_logit)  
+
+            with tf.name_scope('Help_classifier_train'):
+                self.help_logit = train_lstm(help_state, help_decoder, help_output_layer, help_dec_embed_input, help_target_len)
+                self.help_softmax, self.help_predictions, self.help_one_hot_prediction = lstm_classifier(self.help_logit)
             
             def c3d_classifier_dense(x):
                 with tf.variable_scope("c3d_classifier_dense", reuse=tf.AUTO_REUSE):
@@ -351,22 +352,26 @@ class Training:
                     with tf.name_scope(Net):
                         with tf.name_scope("C3d_Loss"):
                             cross_entropy_c3d_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].logit_c3d)
-                            c3d_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_c3d_vec, transpose_b=True))
+                            # c3d_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_c3d_vec, transpose_b=True))
+                            c3d_loss = tf.reduce_sum(cross_entropy_c3d_vec)
 
                         with tf.name_scope("Now_Loss"):
-                            cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].now_logit[:,:-1,:])
-                            now_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_Now_vec, transpose_b=True))
+                            cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].inference_logit[:,:-1,:])
+                            # now_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_Now_vec, transpose_b=True))
+                            now_loss = tf.reduce_sum(cross_entropy_Now_vec)
 
                         with tf.name_scope("help_Loss"):
-                            cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].help_one_hot_label[:,:-1,:], logits=Networks[Net].help_logit[:,:-1,:])
-                            help_loss = tf.reduce_mean(tf.matmul(self.help_weight[z,:,:-1 ], cross_entropy_help_vec, transpose_b=True))
+                            cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].help_one_hot_label[:,:-1,:], logits=Networks[Net].help_inference_logit[:,:-1,:])
+                            # help_loss = tf.reduce_mean(tf.matmul(self.help_weight[z,:,:-1 ], cross_entropy_help_vec, transpose_b=True))
+                            help_loss = tf.reduce_sum(cross_entropy_help_vec)
 
                         with tf.name_scope("Next_Loss"):
                             cross_entropy_Next_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].next_one_hot_label, logits=Networks[Net].next_logit)
-                            next_loss = tf.reduce_mean(tf.tensordot(self.next_weight[z,...], cross_entropy_Next_vec, axes=1))
+                            # next_loss = tf.reduce_mean(tf.tensordot(self.next_weight[z,...], cross_entropy_Next_vec, axes=1))
+                            next_loss = tf.reduce_sum(cross_entropy_Next_vec)
 
                         with tf.name_scope("Autoencoder_Loss"):
-                            auto_enc_loss=tf.reduce_mean(tf.square(Networks[Net].autoenc_out-Networks[Net].c3d_out))
+                            auto_enc_loss=tf.reduce_sum(tf.square(Networks[Net].autoenc_out-Networks[Net].c3d_out))
 
                         if z == 0:
                             c3d_loss_sum = c3d_loss
@@ -388,9 +393,9 @@ class Training:
                     next_loss_sum = tf.cast(next_loss_sum, tf.float64)
                     auto_enc_loss_sum = tf.cast(auto_enc_loss_sum, tf.float64)
                     help_loss_sum = tf.cast(help_loss_sum, tf.float64)
-                    c3d_par = tf.pow(c3d_recall,1)
-                    now_par = tf.pow(inference_recall,1)
-                    next_par = tf.pow(next_recall,1)
+                    c3d_par = tf.pow(c3d_recall,2)
+                    now_par = tf.pow(inference_recall,8)
+                    next_par = tf.pow(next_recall,2)
                     total_loss = (c3d_par)*(now_par*(next_par*help_loss_sum + (1-next_par)*next_loss_sum) + (1-now_par)*now_loss_sum) + (1 - c3d_par) * c3d_loss_sum + auto_enc_loss_sum
                     # total_loss = c3d_loss_sum + help_loss_sum + next_loss_sum + now_loss_sum + auto_enc_loss_sum
                     
