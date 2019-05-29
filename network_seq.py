@@ -209,8 +209,8 @@ class activity_network:
                 self.inference_softmax, self.inference_predictions, self.inference_one_hot_prediction = lstm_classifier(self.inference_logit)                           
 
             with tf.name_scope('Next_classifier'):
-                self.inference_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
-                flat_now = tf.contrib.layers.flatten(self.inference_softmax)
+                self.now_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
+                flat_now = tf.contrib.layers.flatten(self.now_softmax)
                 C_composedVec = tf.concat([encoder_state.c, flat_now], 1)
                 H_composedVec = tf.concat([encoder_state.h, flat_now], 1)
                 new_C = tf.layers.dense(C_composedVec, config.lstm_units)
@@ -354,11 +354,11 @@ class Training:
                             c3d_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_c3d_vec, transpose_b=True))
 
                         with tf.name_scope("Now_Loss"):
-                            cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].inference_logit[:,:-1,:])
+                            cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].now_logit[:,:-1,:])
                             now_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_Now_vec, transpose_b=True))
 
                         with tf.name_scope("help_Loss"):
-                            cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].help_one_hot_label[:,:-1,:], logits=Networks[Net].help_inference_logit[:,:-1,:])
+                            cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].help_one_hot_label[:,:-1,:], logits=Networks[Net].help_logit[:,:-1,:])
                             help_loss = tf.reduce_mean(tf.matmul(self.help_weight[z,:,:-1 ], cross_entropy_help_vec, transpose_b=True))
 
                         with tf.name_scope("Next_Loss"):
