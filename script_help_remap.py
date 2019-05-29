@@ -20,7 +20,7 @@ map_1 = {
     'get torch from technician under diverter and put on the table': 'get_from_technician_and_put_on_the_table torch under_diverter',
     'get spray-bottle from technician near guard and put on the table':'get_from_technician_and_put_on_the_table spray_bottle guard_support',
     'get torch from technician on ladder and put on the table':'get_from_technician_and_put_on_the_table torch on_ladder',
-    'grasp guard and put on diverter': 'grasp_and_put_on_diverter guard guard_support',
+    'grasp guard and put on diverter': 'grasp_and_put_on_diverter guard at_guard_support',
     'remove guard and put down': 'remove_and_put_down guard under_diverter'
 
 }
@@ -52,6 +52,8 @@ def clean_label_2(label, dat, fl):
             label = label[0] + ' under_diverter'
         elif 'on ladder' in label[1]:
             label = label[0] + ' on_ladder'
+        elif 'at guard-support' in label[1]:
+            label = label[0] + ' at_guard_support'
         else:
             pp.pprint(fl)
             # pp.pprint(dat)
@@ -67,7 +69,8 @@ def clean_label_3(label):
     return label
 
 labels = []
-pp.pprint(help_dataset['recording_03-15-2019_16-14-27.267_cam6.avi'])
+label_collection = []
+# pp.pprint(help_dataset['recording_03-15-2019_16-14-27.267_cam6.avi'])
 
 for fl in help_dataset:
     label_list = []
@@ -104,6 +107,8 @@ for fl in help_dataset:
     for idx in range(len(help_dataset[fl])):
         entry = help_dataset[fl][idx]
         label = entry['label']
+        if label.split(':')[0] not in label_collection:
+            label_collection.append(label.split(':')[0])
         label = clean_label(label)
         help_dataset[fl][idx]['label'] = label
 
@@ -158,6 +163,8 @@ for fl in help_dataset:
 with open(config.kit_help_annotation, 'w') as outfile:
     json.dump(help_dataset, outfile)
 
+label_collection.sort()
+pp.pprint(label_collection)
 labels.sort()
 print('labels')
 pp.pprint(labels)

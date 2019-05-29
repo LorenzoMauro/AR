@@ -393,8 +393,8 @@ class Training:
                     next_loss_sum = tf.cast(next_loss_sum, tf.float64)
                     auto_enc_loss_sum = tf.cast(auto_enc_loss_sum, tf.float64)
                     help_loss_sum = tf.cast(help_loss_sum, tf.float64)
-                    c3d_par = tf.pow(c3d_recall,2)
-                    now_par = tf.pow(inference_recall,8)
+                    c3d_par = tf.pow(c3d_recall,1)
+                    now_par = tf.pow(inference_recall,6)
                     next_par = tf.pow(next_recall,2)
                     total_loss = (c3d_par)*(now_par*(next_par*help_loss_sum + (1-next_par)*next_loss_sum) + (1-now_par)*now_loss_sum) + (1 - c3d_par) * c3d_loss_sum + auto_enc_loss_sum
                     # total_loss = c3d_loss_sum + help_loss_sum + next_loss_sum + now_loss_sum + auto_enc_loss_sum

@@ -54,6 +54,8 @@ class Dataset:
         self.id_to_label =  annotation.id_to_label
         self.frame_label =  annotation.frames_label
         self.word_to_id, self.id_to_word = self.create_labels_mappings_network(self.label_to_id)
+        pp.pprint(self.word_to_id)
+        pp.pprint(self.id_to_word)
         self.number_of_classes = len(self.word_to_id)
         self.save(self.label_to_id, 'label_to_id')
         self.save(self.id_to_label, 'id_to_label')
@@ -128,7 +130,7 @@ class Dataset:
         id_to_word[1] = 'go'
         word_to_id['end'] = 2
         id_to_word[2] = 'end'
-        obj_list = {'guard', 'cloth', 'torch', 'guard', 'spray_bottle'}
+        obj_list = {'guard', 'cloth', 'torch', 'spray_bottle', 'table', 'pliers', 'screwdriver', 'brush', 'cutter', 'robot', 'ladder'}
         i = 3
         for label in label_to_id.keys():
             label = label.split(' ')
@@ -137,6 +139,11 @@ class Dataset:
                     word_to_id[word] = i
                     id_to_word[i] = word
                     i += 1
+        for obj in obj_list:
+            if obj not in word_to_id:
+                word_to_id[obj] = i
+                id_to_word[i] = obj
+                i += 1
         return word_to_id, id_to_word
 
     def compute_weight(self, collection):
