@@ -210,8 +210,8 @@ class activity_network:
                 self.now_softmax, self.now_predictions, self.now_one_hot_prediction = lstm_classifier(self.now_logit)                          
 
             with tf.name_scope('Next_classifier'):
-                self.now_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
-                flat_now = tf.contrib.layers.flatten(self.now_softmax)
+                self.inference_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
+                flat_now = tf.contrib.layers.flatten(self.inference_softmax)
                 C_composedVec = tf.concat([encoder_state.c, flat_now], 1)
                 H_composedVec = tf.concat([encoder_state.h, flat_now], 1)
                 new_C = tf.layers.dense(C_composedVec, config.lstm_units)
