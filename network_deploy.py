@@ -128,7 +128,11 @@ class activity_network:
                     return reshape_2_cd
             
             with tf.name_scope('c3d_mapfn'):
-                self.c3d_out = tf.map_fn(lambda x: C3d(x), self.input_batch)
+                reshape_shape = [-1, config.frames_per_step, config.out_H, config.out_W, config.input_channels]
+                reshaped_input = tf.reshape(self.input_batch, reshape_shape)
+                c3d_out = C3d(reshaped_input)
+                self.c3d_out = tf.reshape(c3d_out, [-1, config.seq_len, c3d_out.shape[-1]])
+                # self.c3d_out = tf.map_fn(lambda x: C3d(x), self.input_batch)
 
             with tf.name_scope("Dimension_Encoder"):
                 dense1_cd = tf.layers.dense(self.c3d_out, config.enc_fc_1)
@@ -252,10 +256,14 @@ class activity_network:
                 return logit
 
             with tf.name_scope('c3d_classifier'):
-                self.logit_c3d = tf.map_fn(lambda x: c3d_classifier_dense(x), self.c3d_out)
+                reshaped_c3d_out = tf.reshape(self.c3d_out, [-1,self.c3d_out.shape[-1]])
+                dense_out = c3d_classifier_dense(reshaped_c3d_out)
+                self.logit_c3d = tf.reshape(dense_out, [-1,self.c3d_out.shape[-2],dense_out.shape[-1]])
+                # self.logit_c3d = tf.map_fn(lambda x: c3d_classifier_dense(x), self.c3d_out)
                 self.softmax_c3d = tf.nn.softmax(self.logit_c3d)
                 self.predictions_c3d = tf.argmax(input=self.softmax_c3d, axis=2, name="c3d_prediction")
                 self.c3d_one_hot_prediction= tf.one_hot(self.predictions_c3d, depth = self.softmax_c3d.shape[-1])
+
 
     def _variable_with_weight_decay(self, name, shape, stddev, wd):
         var = tf.get_variable(name, shape, initializer=tf.truncated_normal_initializer(stddev=stddev))

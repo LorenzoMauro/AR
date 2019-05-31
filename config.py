@@ -5,7 +5,7 @@ allow_growth = True
 
 #[Train]
 c3d_ucf_weights = "sports1m_finetuning_ucf101.model"
-Batch_size = 10
+Batch_size = 5
 frames_per_step = 6
 window_size = 1
 load_previous_weigth = True
@@ -15,7 +15,7 @@ model_filename = './checkpoint/Net_weigths.model'
 deploy_folder = './Help-System/model/activity_network_model'
 tot_steps = 1000000
 processes = 20
-tasks = 25
+tasks = 40
 val_task = 10
 reuse_HSM = True
 reuse_output_collection = False
@@ -25,7 +25,7 @@ balance_key = 'all'
 is_ordered = False
 
 #[Network]
-learning_rate = 0.01
+learning_rate_start = 0.0001
 gradient_clipping_norm = 1.0
 c3d_dropout = 0.6
 preLstm_dropout = 0.6
@@ -58,7 +58,7 @@ validation_fraction = 0.2
 split_seconds = True
 
 #[Annotation]
-rebuild = True
+rebuild = False
 limit_classes = True
 use_prep = True
 classes_to_use = ['milk', 'coffee'] # ['friedegg', 'cereals', 'milk']
@@ -79,7 +79,8 @@ breakfast_fps = 15
 
 
 #confusion
-reset_confusion_step = 20000
-update_confusion = 10000
-val_step = 5000
+base_mult = Batch_size*4
+reset_confusion_step = base_mult*int(20000/base_mult)
+update_confusion = base_mult*int(10000/base_mult)
+val_step = base_mult*int(5000/base_mult)
 no_sil_step = 100000

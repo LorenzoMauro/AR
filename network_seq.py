@@ -210,8 +210,8 @@ class activity_network:
                 self.now_softmax, self.now_predictions, self.now_one_hot_prediction = lstm_classifier(self.now_logit)                          
 
             with tf.name_scope('Next_classifier'):
-                self.inference_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
-                flat_now = tf.contrib.layers.flatten(self.inference_softmax)
+                self.now_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
+                flat_now = tf.contrib.layers.flatten(self.now_softmax)
                 C_composedVec = tf.concat([encoder_state.c, flat_now], 1)
                 H_composedVec = tf.concat([encoder_state.h, flat_now], 1)
                 new_C = tf.layers.dense(C_composedVec, config.lstm_units)
@@ -356,12 +356,12 @@ class Training:
                             c3d_loss = tf.reduce_sum(cross_entropy_c3d_vec)
 
                         with tf.name_scope("Now_Loss"):
-                            cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].inference_logit[:,:-1,:])
+                            cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].now_logit[:,:-1,:])
                             # now_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_Now_vec, transpose_b=True))
                             now_loss = tf.reduce_sum(cross_entropy_Now_vec)
 
                         with tf.name_scope("help_Loss"):
-                            cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].help_one_hot_label[:,:-1,:], logits=Networks[Net].help_inference_logit[:,:-1,:])
+                            cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].help_one_hot_label[:,:-1,:], logits=Networks[Net].help_logit[:,:-1,:])
                             # help_loss = tf.reduce_mean(tf.matmul(self.help_weight[z,:,:-1 ], cross_entropy_help_vec, transpose_b=True))
                             help_loss = tf.reduce_sum(cross_entropy_help_vec)
 
@@ -394,8 +394,8 @@ class Training:
                     auto_enc_loss_sum = tf.cast(auto_enc_loss_sum, tf.float64)
                     help_loss_sum = tf.cast(help_loss_sum, tf.float64)
                     c3d_par = tf.pow(c3d_recall,1)
-                    now_par = tf.pow(inference_recall,6)
-                    next_par = tf.pow(next_recall,2)
+                    now_par = tf.pow(inference_recall,1)
+                    next_par = tf.pow(next_recall,1)
                     total_loss = (c3d_par)*(now_par*(next_par*help_loss_sum + (1-next_par)*next_loss_sum) + (1-now_par)*now_loss_sum) + (1 - c3d_par) * c3d_loss_sum + auto_enc_loss_sum
                     # total_loss = c3d_loss_sum + help_loss_sum + next_loss_sum + now_loss_sum + auto_enc_loss_sum
                     
@@ -403,9 +403,9 @@ class Training:
                 Train_variable = [v for v in self.variables if 'Openpose' not in v.name.split('/')[0]]
                 Train_variable = [v for v in Train_variable if 'MobilenetV1' not in v.name.split('/')[0]]
 
-                starter_learning_rate = 0.00001
+                starter_learning_rate = config.learning_rate_start
                 learning_rate = tf.train.exponential_decay(starter_learning_rate, self.global_step,
-                                                            1000, 0.9)
+                                                            10000, 0.9)
                 
                 self.train_op = tf.contrib.layers.optimize_loss(
                     loss=total_loss,
@@ -422,21 +422,24 @@ class Training:
                 # tf.summary.histogram("h_in", self.h_input)
                 # # tf.summary.histogram("labels_target", argmax_labels)
                 with tf.name_scope('Loss'):
-                    tf.summary.scalar('help_Loss', help_loss_sum)
-                    tf.summary.scalar('Now_Loss', now_loss_sum)
-                    tf.summary.scalar('Next_Loss', next_loss_sum)
-                    tf.summary.scalar('C3d_Loss', c3d_loss_sum)
+                    tf.summary.scalar('1_help_Loss', help_loss_sum)
+                    tf.summary.scalar('1_Now_Loss', now_loss_sum)
+                    tf.summary.scalar('1_Next_Loss', next_loss_sum)
+                    tf.summary.scalar('1_C3d_Loss', c3d_loss_sum)
+                    tf.summary.scalar('1_learning_rate', learning_rate)
 
                 with tf.name_scope('recall'):
-                    tf.summary.scalar('c3d_recall', c3d_recall)
-                    tf.summary.scalar('now_inference_recall', inference_recall)
-                    tf.summary.scalar('next_recall', next_recall)
-                    tf.summary.scalar('help_inference_recall', help_inference_recall)
+                    tf.summary.scalar('2_c3d_recall', c3d_recall)
+                    tf.summary.scalar('2_now_inference_recall', inference_recall)
+                    tf.summary.scalar('2_next_recall', next_recall)
+                    tf.summary.scalar('2_help_inference_recall', help_inference_recall)
+                    tf.summary.scalar('2_help_train_recall', help_recall)
+                    tf.summary.scalar('2_now_train_recall', now_recall)
 
                 with tf.name_scope('help_recal_by_word'):
-                    tf.summary.scalar('action_inference_recall', action_inference_recall)
-                    tf.summary.scalar('object_inference_recall', object_inference_recall)
-                    tf.summary.scalar('place_inference_recall', place_inference_recall)
+                    tf.summary.scalar('3_action_inference_recall', action_inference_recall)
+                    tf.summary.scalar('3_object_inference_recall', object_inference_recall)
+                    tf.summary.scalar('3_place_inference_recall', place_inference_recall)
 
                 with tf.name_scope('Help'):
                     # tf.summary.histogram("help_action_target", tf.argmax(input=help_action_target, axis=1, name="help_action_target"))
@@ -447,12 +450,10 @@ class Training:
                     # tf.summary.histogram("help_loc_pred", tf.argmax(input=help_loc_pred, axis=1, name="help_loc_pred"))
                     tf.summary.histogram("Help_classification", predictions_help_conc)
                     tf.summary.histogram("Help_label", tf.argmax(input=help_label_conc, axis=-1))
-                    # tf.summary.scalar('help_recall', help_recall)
 
                 with tf.name_scope('Now'):
                     tf.summary.histogram("Now_classification", predictions_now_conc)
                     tf.summary.histogram("Now_label", tf.argmax(input=now_label_conc, axis=-1))
-                    # tf.summary.scalar('now_recall', now_recall)
 
                 with tf.name_scope('Next'):
                     tf.summary.histogram("Next_classification", predictions_next_conc)
