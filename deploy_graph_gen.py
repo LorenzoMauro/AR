@@ -35,6 +35,7 @@ with tf.Session() as sess:
             var_rest.append(el[0])
         variables = tf.contrib.slim.get_variables_to_restore()
         var_list = [v for v in variables if v.name.split(':')[0] in var_rest]
+        pp.pprint(var_list)
         loader = tf.train.Saver(var_list=var_list)
         loader.restore(sess, ckpts)
         whole_saver.save(sess, config.deploy_folder)
