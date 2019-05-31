@@ -134,6 +134,7 @@ class activity_network:
                 reshaped_input = tf.reshape(self.input_batch, reshape_shape)
                 c3d_out = C3d(reshaped_input)
                 self.c3d_out = tf.reshape(c3d_out, [-1, config.seq_len, c3d_out.shape[-1]])
+                print(self.c3d_out)
                 # self.c3d_out = tf.map_fn(lambda x: C3d(x), self.input_batch)
 
             with tf.name_scope("Dimension_Encoder"):
