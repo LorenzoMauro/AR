@@ -57,7 +57,6 @@ def train():
         elif config.load_c3d:
             print('original c3d loaded')
             Train_Net.c3d_loader.restore(sess, config.c3d_ucf_weights)
-        return
         step = 0
         training = True
         with tf.name_scope('whole_saver'):
