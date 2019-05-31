@@ -130,8 +130,8 @@ class activity_network:
             
             with tf.name_scope('c3d_mapfn'):
                 reshape_shape = [-1, config.frames_per_step, config.out_H, config.out_W, config.input_channels]
-                input_batch = tf.Print(self.input_batch, [self.input_batch], summarize=1000)
-                reshaped_input = tf.reshape(input_batch, reshape_shape)
+                # input_batch = tf.Print(self.input_batch, [self.input_batch], summarize=1000)
+                reshaped_input = tf.reshape(self.input_batch, reshape_shape)
                 c3d_out = C3d(reshaped_input)
                 self.c3d_out = tf.reshape(c3d_out, [1, config.seq_len, c3d_out.shape[-1]])
                 # self.c3d_out = tf.map_fn(lambda x: C3d(x), self.input_batch)
