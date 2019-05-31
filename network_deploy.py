@@ -212,8 +212,8 @@ class activity_network:
                 self.inference_softmax, self.inference_predictions, self.inference_one_hot_prediction = lstm_classifier(self.inference_logit)                           
 
             with tf.name_scope('Next_classifier'):
-                self.now_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
-                correct_shape = self.now_softmax.shape
+                # self.now_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
+                # correct_shape = self.now_softmax.shape
                 self.inference_softmax.set_shape([correct_shape[0], correct_shape[1], correct_shape[2]])
                 flat_now = tf.contrib.layers.flatten(self.inference_softmax)
                 C_composedVec = tf.concat([encoder_state.c, flat_now], 1)
