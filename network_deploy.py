@@ -199,9 +199,9 @@ class activity_network:
 
             with tf.name_scope('Now_Decoder_block'):
                 now_decoder, now_output_layer = decoder_lstm(config.lstm_units)
-            with tf.name_scope('Now_Decoder_train'):
-                self.now_logit = train_lstm(encoder_state, now_decoder, now_output_layer, now_dec_embed_input, now_target_len)
-                self.now_softmax, self.now_predictions, self.now_one_hot_prediction = lstm_classifier(self.now_logit)
+            # with tf.name_scope('Now_Decoder_train'):
+            #     self.now_logit = train_lstm(encoder_state, now_decoder, now_output_layer, now_dec_embed_input, now_target_len)
+            #     self.now_softmax, self.now_predictions, self.now_one_hot_prediction = lstm_classifier(self.now_logit)
 
             with tf.name_scope('Now_Decoder_inference'):
                 self.inference_logit = decoding_layer_infer(encoder_state, now_decoder, Input_manager.dec_embeddings, IO_tool.dataset.word_to_id['go'],
@@ -236,9 +236,9 @@ class activity_network:
                 help_H = tf.layers.dense(help_H_composedVec, config.lstm_units)
                 help_state = tf.contrib.rnn.LSTMStateTuple(help_C, help_H)
 
-            with tf.name_scope('Help_classifier_train'):
-                self.help_logit = train_lstm(help_state, help_decoder, help_output_layer, help_dec_embed_input, help_target_len)
-                self.help_softmax, self.help_predictions, self.help_one_hot_prediction = lstm_classifier(self.help_logit)
+            # with tf.name_scope('Help_classifier_train'):
+            #     self.help_logit = train_lstm(help_state, help_decoder, help_output_layer, help_dec_embed_input, help_target_len)
+            #     self.help_softmax, self.help_predictions, self.help_one_hot_prediction = lstm_classifier(self.help_logit)
             
             with tf.name_scope('Help_Decoder_inference'):
                 self.help_inference_logit = decoding_layer_infer(help_state, help_decoder, Input_manager.dec_embeddings, IO_tool.dataset.word_to_id['go'],
