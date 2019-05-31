@@ -26,7 +26,7 @@ with tf.Session() as sess:
 
     with tf.name_scope('Saver_and_Loader'):
         with tf.name_scope('whole_saver'):
-            whole_saver = tf.train.Saver()
+            whole_saver = tf.train.Saver(name = 'saver')
         
         ckpts = tf.train.latest_checkpoint('./checkpoint')
         vars_in_checkpoint = tf.train.list_variables(ckpts)
@@ -37,6 +37,6 @@ with tf.Session() as sess:
         var_list = [v for v in variables if v.name.split(':')[0] in var_rest]
         loader = tf.train.Saver(var_list=var_list)
         loader.restore(sess, ckpts)
-        whole_saver.save(sess, config.deploy_folder, global_step=0)
+        whole_saver.save(sess, config.deploy_folder)
         deploy_writer = tf.summary.FileWriter("deploy_writer", sess.graph)
 

@@ -155,14 +155,14 @@ class Dataset:
             for next_label in collection[current_label].keys():
                 for help_label in collection[current_label][next_label].keys():
                     for entry in collection[current_label][next_label][help_label]:
-                        current_label = self.word_to_id[self.id_to_label[entry['now_label']]]
-                        next_label = self.word_to_id[self.id_to_label[entry['next_label']]]
-                        help_label = self.id_to_label[entry['help']].split(' ')
-                        for word_id in help_label:
+                        current_word = self.word_to_id[self.id_to_label[entry['now_label']]]
+                        next_word = self.word_to_id[self.id_to_label[entry['next_label']]]
+                        help_word = self.id_to_label[entry['help']].split(' ')
+                        for word_id in help_word:
                             new_word_id = self.word_to_id[word_id]
                             help_frequency_count[new_word_id] += 1
-                        now_frequency_count[current_label] += 1
-                        next_frequency_count[next_label] += 1
+                        now_frequency_count[current_word] += 1
+                        next_frequency_count[next_word] += 1
         now_frequency_count = (np.max(now_frequency_count) - now_frequency_count +1) / np.mean(now_frequency_count)
         next_frequency_count = (np.max(next_frequency_count) - next_frequency_count +1) / np.mean(next_frequency_count)
         help_frequency_count = (np.max(help_frequency_count) - help_frequency_count +1) / np.mean(help_frequency_count)

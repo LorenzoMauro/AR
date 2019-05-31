@@ -13,6 +13,7 @@ load_pretrained_weigth = False
 load_c3d = False
 model_filename = './checkpoint/Net_weigths.model'
 deploy_folder = './Help-System/model/activity_network_model'
+deploy_folder = './Help-System/model/activity_network_model.ckpt'
 tot_steps = 1000000
 processes = 20
 tasks = 40
