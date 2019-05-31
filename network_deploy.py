@@ -56,6 +56,7 @@ class activity_network:
                     'bc5b': self._variable_with_weight_decay('bc5b', [512], 0.04, 0.0)}
 
             with tf.name_scope("Input"):
+                print(device_j)
                 self.input_batch = Input_manager.input_batch[device_j, :, :, :, :, :]
                 self.input_batch.set_shape([None, config.seq_len, config.frames_per_step, config.out_H, config.out_W, config.input_channels])
                 self.batch_size = tf.shape(self.input_batch)[0]
@@ -131,7 +132,7 @@ class activity_network:
                 reshape_shape = [-1, config.frames_per_step, config.out_H, config.out_W, config.input_channels]
                 reshaped_input = tf.reshape(self.input_batch, reshape_shape)
                 c3d_out = C3d(reshaped_input)
-                self.c3d_out = tf.reshape(c3d_out, [-1, config.seq_len, c3d_out.shape[-1]])
+                self.c3d_out = tf.reshape(c3d_out, [1, config.seq_len, c3d_out.shape[-1]])
                 # self.c3d_out = tf.map_fn(lambda x: C3d(x), self.input_batch)
 
             with tf.name_scope("Dimension_Encoder"):
@@ -199,9 +200,9 @@ class activity_network:
 
             with tf.name_scope('Now_Decoder_block'):
                 now_decoder, now_output_layer = decoder_lstm(config.lstm_units)
-            # with tf.name_scope('Now_Decoder_train'):
-            #     self.now_logit = train_lstm(encoder_state, now_decoder, now_output_layer, now_dec_embed_input, now_target_len)
-            #     self.now_softmax, self.now_predictions, self.now_one_hot_prediction = lstm_classifier(self.now_logit)
+            with tf.name_scope('Now_Decoder_train'):
+                self.now_logit = train_lstm(encoder_state, now_decoder, now_output_layer, now_dec_embed_input, now_target_len)
+                self.now_softmax, self.now_predictions, self.now_one_hot_prediction = lstm_classifier(self.now_logit)
 
             with tf.name_scope('Now_Decoder_inference'):
                 self.inference_logit = decoding_layer_infer(encoder_state, now_decoder, Input_manager.dec_embeddings, IO_tool.dataset.word_to_id['go'],
@@ -236,9 +237,9 @@ class activity_network:
                 help_H = tf.layers.dense(help_H_composedVec, config.lstm_units)
                 help_state = tf.contrib.rnn.LSTMStateTuple(help_C, help_H)
 
-            # with tf.name_scope('Help_classifier_train'):
-            #     self.help_logit = train_lstm(help_state, help_decoder, help_output_layer, help_dec_embed_input, help_target_len)
-            #     self.help_softmax, self.help_predictions, self.help_one_hot_prediction = lstm_classifier(self.help_logit)
+            with tf.name_scope('Help_classifier_train'):
+                self.help_logit = train_lstm(help_state, help_decoder, help_output_layer, help_dec_embed_input, help_target_len)
+                self.help_softmax, self.help_predictions, self.help_one_hot_prediction = lstm_classifier(self.help_logit)
             
             with tf.name_scope('Help_Decoder_inference'):
                 self.help_inference_logit = decoding_layer_infer(help_state, help_decoder, Input_manager.dec_embeddings, IO_tool.dataset.word_to_id['go'],
