@@ -388,11 +388,11 @@ class Training:
                         z +=1
                     else:
                         c3d_pred_conc = tf.concat([c3d_pred_conc, Networks[Net].c3d_one_hot_prediction], axis=0)
-                        now_pred_conc = tf.concat([now_pred_conc, Networks[Net].now_one_hot_prediction], axis=0)
+                        now_pred_conc = tf.concat([now_pred_conc, Networks[Net].inference_one_hot_prediction], axis=0)
                         next_pred_conc = tf.concat([next_pred_conc, Networks[Net].next_one_hot_prediction], axis=0)
                         now_label_conc = tf.concat([now_label_conc, Networks[Net].now_one_hot_label], axis=0)
                         next_label_conc = tf.concat([next_label_conc, Networks[Net].next_one_hot_label], axis=0)
-                        help_pred_conc = tf.concat([help_pred_conc, Networks[Net].help_one_hot_prediction], axis=0)
+                        help_pred_conc = tf.concat([help_pred_conc, Networks[Net].help_inference_one_hot_prediction], axis=0)
                         help_label_conc = tf.concat([help_label_conc, Networks[Net].help_one_hot_label], axis=0)
                         predictions_c3d_conc = tf.concat([predictions_c3d_conc,Networks[Net].predictions_c3d], axis=0)
                         predictions_now_conc = tf.concat([predictions_now_conc,Networks[Net].inference_predictions], axis=0)
