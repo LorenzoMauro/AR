@@ -432,6 +432,7 @@ class Training:
                     now_par = tf.pow(inference_recall,1)
                     next_par = tf.pow(next_recall,1)
                     self.total_loss = (c3d_par)*(now_par*(next_par*self.help_loss_cast + (1-next_par)*self.next_loss_cast) + (1-now_par)*self.now_loss_cast) + (1 - c3d_par) * self.c3d_loss_cast + self.auto_enc_loss_cast
+                    self.total_loss = self.now_loss_cast + self.next_loss_cast +self.auto_enc_loss_cast+self.help_loss_cast+self.c3d_loss_cast
 
                 Train_variable = [v for v in self.variables if 'Openpose' not in v.name.split('/')[0]]
                 Train_variable = [v for v in Train_variable if 'MobilenetV1' not in v.name.split('/')[0]]
