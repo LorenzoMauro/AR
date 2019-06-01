@@ -47,6 +47,12 @@ class Dataset:
         else:
             self.generate_dataset()
 
+        pp.pprint(self.collection.keys())
+        # pp.pprint(self.word_to_id)
+        # pp.pprint(self.id_to_word)
+        # pp.pprint(self.id_to_label)
+        # pp.pprint(self.id_to_word)
+
     def generate_dataset(self):
         annotation = Annotation()
         self.whole_dataset = annotation.dataset
@@ -54,8 +60,6 @@ class Dataset:
         self.id_to_label =  annotation.id_to_label
         self.frame_label =  annotation.frames_label
         self.word_to_id, self.id_to_word = self.create_labels_mappings_network(self.label_to_id)
-        pp.pprint(self.word_to_id)
-        pp.pprint(self.id_to_word)
         self.number_of_classes = len(self.word_to_id)
         self.save(self.label_to_id, 'label_to_id')
         self.save(self.id_to_label, 'id_to_label')
@@ -64,7 +68,6 @@ class Dataset:
         self.save(self.frame_label, 'frame_label')
         self.validation_fraction = config.validation_fraction
         self.collection, self.ordered_collection, self.multi_list, self.couple_count, self.max_history, self.comb_count= self.new_collection(self.whole_dataset)
-        pp.pprint(self.collection.keys())
         self.now_weigth, self.next_weigth, self.help_weigth = self.compute_weight(self.collection)
         non_zero_division = False
         while not non_zero_division:
@@ -85,8 +88,6 @@ class Dataset:
         with open('dataset/comb_count.csv', 'w') as f:
             for key in self.comb_count.keys():
                 f.write("%s,%s\n"%(key,self.comb_count[key]))
-        pp.pprint(self.id_to_label)
-        pp.pprint(self.id_to_word)
 
     def split_dataset_second(self, collection):
         dataset = copy.deepcopy(collection)
