@@ -313,7 +313,7 @@ class Training:
                         predictions_now_conc = Networks[Net].inference_predictions
                         predictions_help_conc = Networks[Net].help_inference_predictions
                         predictions_next_conc = Networks[Net].next_predictions
-                        logit_c3_conc = Networks[Net].logit_c3d
+                        logit_c3d_conc = Networks[Net].logit_c3d
                         inference_logit_conc = Networks[Net].inference_logit
                         help_inference_logit_conc = Networks[Net].help_inference_logit
                         next_logit_conc = Networks[Net].next_logit
@@ -332,12 +332,12 @@ class Training:
                         predictions_now_conc = tf.concat([predictions_now_conc,Networks[Net].inference_predictions], axis=0)
                         predictions_help_conc = tf.concat([predictions_help_conc,Networks[Net].help_inference_predictions], axis=0)
                         predictions_next_conc = tf.concat([predictions_next_conc,Networks[Net].next_predictions], axis=0)
-                        logit_c3_conc = tf.concat([Networks[Net].logit_c3d], axis=0)
-                        inference_logit_conc = tf.concat([Networks[Net].inference_logit], axis=0)
-                        help_inference_logit_conc = tf.concat([Networks[Net].help_inference_logit], axis=0)
-                        next_logit_conc = tf.concat([Networks[Net].next_logit], axis=0)
-                        autoenc_out_conc = tf.concat([Networks[Net].autoenc_out], axis=0)
-                        c3d_out_conc = tf.concat([Networks[Net].c3d_out], axis=0)
+                        logit_c3d_conc = tf.concat([logit_c3d_conc, Networks[Net].logit_c3d], axis=0)
+                        inference_logit_conc = tf.concat([inference_logit_conc, Networks[Net].inference_logit], axis=0)
+                        help_inference_logit_conc = tf.concat([help_inference_logit_conc, Networks[Net].help_inference_logit], axis=0)
+                        next_logit_conc = tf.concat([next_logit_conc, Networks[Net].next_logit], axis=0)
+                        autoenc_out_conc = tf.concat([autoenc_out_conc, Networks[Net].autoenc_out], axis=0)
+                        c3d_out_conc = tf.concat([c3d_out_conc, Networks[Net].c3d_out], axis=0)
                         z +=1
 
             with tf.name_scope('Metrics_calculation'):
@@ -351,7 +351,7 @@ class Training:
 
             with tf.name_scope('Loss'):
                 with tf.name_scope("C3d_Loss"):
-                    cross_entropy_c3d_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=now_label_conc[:,:-1,:], logits=logit_c3_conc)
+                    cross_entropy_c3d_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=now_label_conc[:,:-1,:], logits=logit_c3d_conc)
                     # c3d_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_c3d_vec, transpose_b=True))
                     c3d_loss_sum = tf.reduce_sum(cross_entropy_c3d_vec)
 
