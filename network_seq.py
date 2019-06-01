@@ -276,12 +276,12 @@ class activity_network:
                     self.c3d_loss = tf.reduce_sum(cross_entropy_c3d_vec)
 
                 with tf.name_scope("Now_Loss"):
-                    cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.now_one_hot_label[:,:-1,:], logits=self.inference_logit[:,:-1,:])
+                    cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.now_one_hot_label[:,:-1,:], logits=self.inference_logit)
                     # now_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_Now_vec, transpose_b=True))
                     self.now_loss = tf.reduce_sum(cross_entropy_Now_vec)
 
                 with tf.name_scope("help_Loss"):
-                    cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.help_one_hot_label[:,:-1,:], logits=self.help_inference_logit[:,:-1,:])
+                    cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.help_one_hot_label[:,:-1,:], logits=self.help_inference_logit)
                     # help_loss = tf.reduce_mean(tf.matmul(self.help_weight[z,:,:-1 ], cross_entropy_help_vec, transpose_b=True))
                     self.help_loss = tf.reduce_sum(cross_entropy_help_vec)
 
