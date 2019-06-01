@@ -82,10 +82,10 @@ def train():
                                                                                                         Train_Net.next_weight: batch['next_weight'],
                                                                                                         Train_Net.help_weight: batch['help_weight']})
 
-                print(batch['Y'][0,0,...], now_pred[0,...])
-                print(batch['Y'][0,0,...], c3d_pred[0,...])
-                print(batch['next_Y'][0,0,...], next_pred[0,...])
-                print(batch['help_Y'][0,0,...], help_pred[0,...])
+                # print(batch['Y'][0,0,...], now_pred[0,...])
+                # print(batch['Y'][0,0,...], c3d_pred[0,...])
+                # print(batch['next_Y'][0,0,...], next_pred[0,...])
+                # print(batch['help_Y'][0,0,...], help_pred[0,...])
                 for j in range(len(batch['video_name_collection'])):
                     for y in range(c_state[0].shape[1]):
                         video_name = batch['video_name_collection'][j][y]
