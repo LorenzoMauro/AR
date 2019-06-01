@@ -64,6 +64,7 @@ class Dataset:
         self.save(self.frame_label, 'frame_label')
         self.validation_fraction = config.validation_fraction
         self.collection, self.ordered_collection, self.multi_list, self.couple_count, self.max_history, self.comb_count= self.new_collection(self.whole_dataset)
+        pp.pprint(self.collection.keys())
         self.now_weigth, self.next_weigth, self.help_weigth = self.compute_weight(self.collection)
         non_zero_division = False
         while not non_zero_division:
