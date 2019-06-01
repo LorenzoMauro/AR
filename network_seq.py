@@ -497,7 +497,7 @@ class Training:
                 self.c_out_list = []
                 self.h_out_list = []
                 for Net in Networks:
-                    self.predictions_now.append(Networks[Net].inference_prediction)
+                    self.predictions_now.append(Networks[Net].inference_predictions)
                     self.predictions_next.append(Networks[Net].next_predictions)
                     self.predictions_c3d.append(Networks[Net].predictions_c3d)
                     self.softmax_now.append(Networks[Net].inference_softmax)
