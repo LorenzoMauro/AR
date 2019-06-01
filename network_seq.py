@@ -24,7 +24,7 @@ class Input_manager:
                 self.labels = tf.placeholder(tf.int32, shape=(None, None, config.seq_len + 1), name="now_label")
                 self.help_labels = tf.placeholder(tf.int32, shape=(None, None, 4), name="help_label")
                 self.next_labels = tf.placeholder(tf.int32, shape=(None, None), name="next_label")
-                # self.dec_embeddings = tf.Variable(tf.random_uniform([len(IO_tool.dataset.word_to_id), config.decoder_embedding_size]))
+                self.dec_embeddings = tf.Variable(tf.random_uniform([len(IO_tool.dataset.word_to_id), config.decoder_embedding_size]))
 
 class activity_network:
     def __init__(self, number_of_classes, Input_manager, device_j, IO_tool):
@@ -67,6 +67,7 @@ class activity_network:
                 self.labels = Input_manager.labels[device_j, :, :]
                 now_dec_input = tf.concat([tf.fill([self.batch_size, 1], IO_tool.dataset.word_to_id['go']), self.labels], 1)
                 self.now_one_hot_label= tf.one_hot(self.labels, depth = self.out_vocab_size)
+                now_dec_embed_input = tf.nn.embedding_lookup(Input_manager.dec_embeddings, now_dec_input)
                 now_target_len = tf.ones(shape=(self.batch_size), dtype=tf.int32)*(config.seq_len + 1)
             
             with tf.name_scope("Help_Target"):
@@ -74,6 +75,7 @@ class activity_network:
                 self.help_labels.set_shape([None, 4])
                 help_dec_input = tf.concat([tf.fill([self.batch_size, 1], IO_tool.dataset.word_to_id['go']), self.help_labels], 1)
                 self.help_one_hot_label= tf.one_hot(self.help_labels, depth = self.out_vocab_size)
+                help_dec_embed_input = tf.nn.embedding_lookup(Input_manager.dec_embeddings, help_dec_input)
                 help_target_len = tf.ones(shape=(self.batch_size), dtype=tf.int32)*(4)
 
             with tf.name_scope("Next_Target"):
