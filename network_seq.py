@@ -313,7 +313,7 @@ class Training:
                         predictions_now_conc = Networks[Net].inference_predictions
                         predictions_help_conc = Networks[Net].help_inference_predictions
                         predictions_next_conc = Networks[Net].next_predictions
-                        logit_c3_conc = Networks[Net].logit_c3
+                        logit_c3_conc = Networks[Net].logit_c3d
                         inference_logit_conc = Networks[Net].inference_logit
                         help_inference_logit_conc = Networks[Net].help_inference_logit
                         next_logit_conc = Networks[Net].next_logit
@@ -332,7 +332,7 @@ class Training:
                         predictions_now_conc = tf.concat([predictions_now_conc,Networks[Net].inference_predictions], axis=0)
                         predictions_help_conc = tf.concat([predictions_help_conc,Networks[Net].help_inference_predictions], axis=0)
                         predictions_next_conc = tf.concat([predictions_next_conc,Networks[Net].next_predictions], axis=0)
-                        logit_c3_conc = tf.conat([Networks[Net].logit_c3], axis=0)
+                        logit_c3_conc = tf.conat([Networks[Net].logit_c3d], axis=0)
                         inference_logit_conc = tf.conat([Networks[Net].inference_logit], axis=0)
                         help_inference_logit_conc = tf.conat([Networks[Net].help_inference_logit], axis=0)
                         next_logit_conc = tf.conat([Networks[Net].next_logit], axis=0)
