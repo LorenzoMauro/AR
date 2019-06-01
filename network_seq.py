@@ -313,11 +313,6 @@ class Training:
                         predictions_now_conc = Networks[Net].inference_predictions
                         predictions_help_conc = Networks[Net].help_inference_predictions
                         predictions_next_conc = Networks[Net].next_predictions
-                        c3d_loss_sum = Networks[Net].c3d_loss
-                        now_loss_sum = Networks[Net].now_loss
-                        next_loss_sum = Networks[Net].next_loss
-                        auto_enc_loss_sum = Networks[Net].auto_enc_loss
-                        help_loss_sum = Networks[Net].help_loss
                         logit_c3_conc = Networks[Net].logit_c3
                         inference_logit_conc = Networks[Net].inference_logit
                         help_inference_logit_conc = Networks[Net].help_inference_logit
@@ -337,11 +332,6 @@ class Training:
                         predictions_now_conc = tf.concat([predictions_now_conc,Networks[Net].inference_predictions], axis=0)
                         predictions_help_conc = tf.concat([predictions_help_conc,Networks[Net].help_inference_predictions], axis=0)
                         predictions_next_conc = tf.concat([predictions_next_conc,Networks[Net].next_predictions], axis=0)
-                        c3d_loss_sum += Networks[Net].c3d_loss
-                        now_loss_sum += Networks[Net].now_loss
-                        next_loss_sum += Networks[Net].next_loss
-                        auto_enc_loss_sum += Networks[Net].auto_enc_loss
-                        help_loss_sum += Networks[Net].help_loss
                         logit_c3_conc = tf.conat([Networks[Net].logit_c3], axis=0)
                         inference_logit_conc = tf.conat([Networks[Net].inference_logit], axis=0)
                         help_inference_logit_conc = tf.conat([Networks[Net].help_inference_logit], axis=0)
@@ -363,25 +353,25 @@ class Training:
                 with tf.name_scope("C3d_Loss"):
                     cross_entropy_c3d_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=now_label_conc[:,:-1,:], logits=logit_c3_conc)
                     # c3d_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_c3d_vec, transpose_b=True))
-                    self.c3d_loss = tf.reduce_sum(cross_entropy_c3d_vec)
+                    c3d_loss_sum = tf.reduce_sum(cross_entropy_c3d_vec)
 
                 with tf.name_scope("Now_Loss"):
                     cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=now_label_conc[:,:-1,:], logits=inference_logit_conc)
                     # now_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_Now_vec, transpose_b=True))
-                    self.now_loss = tf.reduce_sum(cross_entropy_Now_vec)
+                    now_loss_sum = tf.reduce_sum(cross_entropy_Now_vec)
 
                 with tf.name_scope("help_Loss"):
                     cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=help_label_conc[:,:-1,:], logits=help_inference_logit_conc)
                     # help_loss = tf.reduce_mean(tf.matmul(self.help_weight[z,:,:-1 ], cross_entropy_help_vec, transpose_b=True))
-                    self.help_loss = tf.reduce_sum(cross_entropy_help_vec)
+                    help_loss_sum = tf.reduce_sum(cross_entropy_help_vec)
 
                 with tf.name_scope("Next_Loss"):
                     cross_entropy_Next_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=next_label_conc, logits=next_logit_conc)
                     # next_loss = tf.reduce_mean(tf.tensordot(self.next_weight[z,...], cross_entropy_Next_vec, axes=1))
-                    self.next_loss = tf.reduce_sum(cross_entropy_Next_vec)
+                    next_loss_sum = tf.reduce_sum(cross_entropy_Next_vec)
 
                 with tf.name_scope("Autoencoder_Loss"):
-                    self.auto_enc_loss=tf.reduce_sum(tf.square(autoenc_out_conc-c3d_out_conc))
+                    auto_enc_loss_sum=tf.reduce_sum(tf.square(autoenc_out_conc-c3d_out_conc))
 
                 # with tf.name_scope("Global_Loss"):
                 #     self.c3d_loss_cast = tf.cast(self.c3d_loss, tf.float64)
