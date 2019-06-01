@@ -24,8 +24,7 @@ class prep_dataset:
             try:
                 shape = tensor.shape
             except Exception as e:
-               print(e)
-               print(frame_path)
+               print(e, frame_path)
                pass
         # if im.any() == None:
         #     print('ERROR LOADING im')
