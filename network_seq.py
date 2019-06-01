@@ -295,15 +295,15 @@ class activity_network:
                     self.auto_enc_loss=tf.reduce_sum(tf.square(self.autoenc_out-self.c3d_out))
 
                 with tf.name_scope("Global_Loss"):
-                    c3d_loss_sum = tf.cast(self.c3d_loss, tf.float64)
-                    now_loss_sum = tf.cast(self.now_loss, tf.float64)
-                    next_loss_sum = tf.cast(self.next_loss, tf.float64)
-                    auto_enc_loss_sum = tf.cast(self.auto_enc_loss, tf.float64)
-                    help_loss_sum = tf.cast(self.help_loss, tf.float64)
+                    self.c3d_loss_cast = tf.cast(self.c3d_loss, tf.float64)
+                    self.now_loss_cast = tf.cast(self.now_loss, tf.float64)
+                    self.next_loss_cast = tf.cast(self.next_loss, tf.float64)
+                    self.auto_enc_loss_cast = tf.cast(self.auto_enc_loss, tf.float64)
+                    self.help_loss_cast = tf.cast(self.help_loss, tf.float64)
                     c3d_par = tf.pow(self.c3d_recall,1)
-                    now_par = tf.pow(self.inference_recall,1)
+                    now_par = tf.pow(self.now_recall,1)
                     next_par = tf.pow(self.next_recall,1)
-                    self.total_loss = (c3d_par)*(now_par*(next_par*self.help_loss_sum + (1-next_par)*self.next_loss_sum) + (1-now_par)*self.now_loss_sum) + (1 - c3d_par) * self.c3d_loss_sum + self.auto_enc_loss_sum
+                    self.total_loss = (c3d_par)*(now_par*(next_par*self.help_loss_cast + (1-next_par)*self.next_loss_cast) + (1-now_par)*self.now_loss_cast) + (1 - c3d_par) * self.c3d_loss_cast + self.auto_enc_loss_cast
                     # total_loss = c3d_loss_sum + help_loss_sum + next_loss_sum + now_loss_sum + auto_enc_loss_sum
             
     def _variable_with_weight_decay(self, name, shape, stddev, wd):
