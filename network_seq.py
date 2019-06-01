@@ -377,7 +377,6 @@ class Training:
                         next_loss_sum = Networks[Net].next_loss
                         auto_enc_loss_sum = Networks[Net].auto_enc_loss
                         help_loss_sum = Networks[Net].help_loss
-                        tot_loss_sum = Networks[Net].total_loss
                         c3d_recall = Networks[Net].c3d_recall
                         inference_recall = Networks[Net].now_recall
                         next_recall = Networks[Net].next_recall
@@ -403,7 +402,6 @@ class Training:
                         next_loss_sum += Networks[Net].next_loss
                         auto_enc_loss_sum += Networks[Net].auto_enc_loss
                         help_loss_sum += Networks[Net].help_loss
-                        tot_loss_sum += Networks[Net].total_loss
                         c3d_recall += Networks[Net].c3d_recall
                         inference_recall += Networks[Net].now_recall
                         next_recall += Networks[Net].next_recall
@@ -443,7 +441,7 @@ class Training:
                                                             10000, 0.9)
                 
                 self.train_op = tf.contrib.layers.optimize_loss(
-                    loss=tot_loss_sum,
+                    loss=self.total_loss,
                     global_step=self.global_step,
                     learning_rate=learning_rate,
                     optimizer='Adam',
