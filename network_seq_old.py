@@ -24,7 +24,7 @@ class Input_manager:
                 self.labels = tf.placeholder(tf.int32, shape=(None, None, config.seq_len + 1), name="now_label")
                 self.help_labels = tf.placeholder(tf.int32, shape=(None, None, 4), name="help_label")
                 self.next_labels = tf.placeholder(tf.int32, shape=(None, None), name="next_label")
-                # self.dec_embeddings = tf.Variable(tf.random_uniform([len(IO_tool.dataset.word_to_id), config.decoder_embedding_size]))
+                self.dec_embeddings = tf.Variable(tf.random_uniform([len(IO_tool.dataset.word_to_id), config.decoder_embedding_size]))
 
 class activity_network:
     def __init__(self, number_of_classes, Input_manager, device_j, IO_tool):
@@ -301,12 +301,12 @@ class Training:
                 for Net in Networks:
                     if z == 0:
                         c3d_pred_conc = Networks[Net].c3d_one_hot_prediction
-                        now_pred_conc = Networks[Net].now_one_hot_prediction
+                        # now_pred_conc = Networks[Net].now_one_hot_prediction
                         now_inf_pred_conc = Networks[Net].inference_one_hot_prediction
                         next_pred_conc = Networks[Net].next_one_hot_prediction
                         now_label_conc = Networks[Net].now_one_hot_label
                         next_label_conc = Networks[Net].next_one_hot_label
-                        help_pred_conc = Networks[Net].help_one_hot_prediction
+                        # help_pred_conc = Networks[Net].help_one_hot_prediction
                         help_inf_pred_conc = Networks[Net].help_inference_one_hot_prediction
                         help_label_conc = Networks[Net].help_one_hot_label
                         predictions_c3d_conc = Networks[Net].predictions_c3d
@@ -316,12 +316,12 @@ class Training:
                         z +=1
                     else:
                         c3d_pred_conc = tf.concat([c3d_pred_conc, Networks[Net].c3d_one_hot_prediction], axis=0)
-                        now_pred_conc = tf.concat([now_pred_conc, Networks[Net].now_one_hot_prediction], axis=0)
+                        # now_pred_conc = tf.concat([now_pred_conc, Networks[Net].now_one_hot_prediction], axis=0)
                         now_inf_pred_conc = tf.concat([now_inf_pred_conc, Networks[Net].inference_one_hot_prediction], axis=0)
                         next_pred_conc = tf.concat([next_pred_conc, Networks[Net].next_one_hot_prediction], axis=0)
                         now_label_conc = tf.concat([now_label_conc, Networks[Net].now_one_hot_label], axis=0)
                         next_label_conc = tf.concat([next_label_conc, Networks[Net].next_one_hot_label], axis=0)
-                        help_pred_conc = tf.concat([help_pred_conc, Networks[Net].help_one_hot_prediction], axis=0)
+                        # help_pred_conc = tf.concat([help_pred_conc, Networks[Net].help_one_hot_prediction], axis=0)
                         help_inf_pred_conc = tf.concat([help_inf_pred_conc, Networks[Net].help_inference_one_hot_prediction], axis=0)
                         help_label_conc = tf.concat([help_label_conc, Networks[Net].help_one_hot_label], axis=0)
                         predictions_c3d_conc = tf.concat([predictions_c3d_conc,Networks[Net].predictions_c3d], axis=0)
@@ -338,10 +338,10 @@ class Training:
 
                 with tf.name_scope('Metrics_calculation'):
                     c3d_precision, c3d_recall, c3d_f1, c3d_accuracy = self.accuracy_metrics(c3d_pred_conc, now_label_conc[:,:-1,:])
-                    now_precision, now_recall, now_f1, now_accuracy = self.accuracy_metrics(now_pred_conc, now_label_conc)
+                    # now_precision, now_recall, now_f1, now_accuracy = self.accuracy_metrics(now_pred_conc, now_label_conc)
                     inference_precision, inference_recall, inference_f1, inference_accuracy = self.accuracy_metrics(now_inf_pred_conc, now_label_conc)
                     next_precision, next_recall, next_f1, next_accuracy = self.accuracy_metrics(next_pred_conc, next_label_conc)
-                    help_precision, help_recall, help_f1, help_accuracy = self.accuracy_metrics(help_pred_conc, help_label_conc)
+                    # help_precision, help_recall, help_f1, help_accuracy = self.accuracy_metrics(help_pred_conc, help_label_conc)
                     help_inference_precision, help_inference_recall, help_inference_f1, inference_accuracy = self.accuracy_metrics(help_inf_pred_conc, help_label_conc)
                     action_inference_precision, action_inference_recall, action_inference_f1, action_accuracy = self.accuracy_metrics(help_action_pred, help_action_target)
                     object_inference_precision, object_inference_recall, object_inference_f1, object_inference_accuracy = self.accuracy_metrics(help_obj_pred, help_obj_target)
@@ -356,12 +356,12 @@ class Training:
                             c3d_loss = tf.reduce_sum(cross_entropy_c3d_vec)
 
                         with tf.name_scope("Now_Loss"):
-                            cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].now_logit[:,:-1,:])
+                            cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].inference_logit[:,:-1,:])
                             # now_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_Now_vec, transpose_b=True))
                             now_loss = tf.reduce_sum(cross_entropy_Now_vec)
 
                         with tf.name_scope("help_Loss"):
-                            cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].help_one_hot_label[:,:-1,:], logits=Networks[Net].help_logit[:,:-1,:])
+                            cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].help_one_hot_label[:,:-1,:], logits=Networks[Net].help_inference_logit[:,:-1,:])
                             # help_loss = tf.reduce_mean(tf.matmul(self.help_weight[z,:,:-1 ], cross_entropy_help_vec, transpose_b=True))
                             help_loss = tf.reduce_sum(cross_entropy_help_vec)
 
@@ -433,8 +433,8 @@ class Training:
                     tf.summary.scalar('2_now_inference_recall', inference_recall)
                     tf.summary.scalar('2_next_recall', next_recall)
                     tf.summary.scalar('2_help_inference_recall', help_inference_recall)
-                    tf.summary.scalar('2_help_train_recall', help_recall)
-                    tf.summary.scalar('2_now_train_recall', now_recall)
+                    # tf.summary.scalar('2_help_train_recall', help_recall)
+                    # tf.summary.scalar('2_now_train_recall', now_recall)
 
                 with tf.name_scope('help_recal_by_word'):
                     tf.summary.scalar('3_action_inference_recall', action_inference_recall)
@@ -487,7 +487,7 @@ class Training:
                 self.c_out_list = []
                 self.h_out_list = []
                 for Net in Networks:
-                    self.predictions_now.append(Networks[Net].now_predictions)
+                    self.predictions_now.append(Networks[Net].inference_predictions)
                     self.predictions_next.append(Networks[Net].next_predictions)
                     self.predictions_c3d.append(Networks[Net].predictions_c3d)
                     self.softmax_now.append(Networks[Net].inference_softmax)
