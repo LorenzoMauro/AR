@@ -201,7 +201,7 @@ class activity_network:
                 self.inference_logit = decoding_layer_infer(encoder_state, now_decoder, Input_manager.dec_embeddings, IO_tool.dataset.word_to_id['go'],
                                                         IO_tool.dataset.word_to_id['end'], config.seq_len , self.out_vocab_size, now_output_layer,
                                                         self.batch_size)
-                paddings = [[0, 0], [0, (config.seq_len + 1)-tf.shape(self.inference_logit)[1]], [0,0 ]]
+                paddings = [[0, 0], [0, (config.seq_len)-tf.shape(self.inference_logit)[1]], [0,0 ]]
                 self.inference_logit = tf.pad(self.inference_logit, paddings, 'CONSTANT', constant_values = 1)
                 self.inference_softmax, self.inference_predictions, self.inference_one_hot_prediction = lstm_classifier(self.inference_logit) 
 
@@ -236,7 +236,7 @@ class activity_network:
                 self.help_inference_logit = decoding_layer_infer(help_state, help_decoder, Input_manager.dec_embeddings, IO_tool.dataset.word_to_id['go'],
                                                         IO_tool.dataset.word_to_id['end'], 3 , self.out_vocab_size, help_output_layer,
                                                         self.batch_size)
-                paddings = [[0, 0], [0, 4-tf.shape(self.help_inference_logit)[1]], [0,0 ]]
+                paddings = [[0, 0], [0, 3-tf.shape(self.help_inference_logit)[1]], [0,0 ]]
                 self.help_inference_logit = tf.pad(self.help_inference_logit, paddings, 'CONSTANT', constant_values = 1)
                 self.help_inference_softmax, self.help_inference_predictions, self.help_inference_one_hot_prediction = lstm_classifier(self.help_inference_logit)  
 
