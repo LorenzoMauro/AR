@@ -332,12 +332,12 @@ class Training:
                         predictions_now_conc = tf.concat([predictions_now_conc,Networks[Net].inference_predictions], axis=0)
                         predictions_help_conc = tf.concat([predictions_help_conc,Networks[Net].help_inference_predictions], axis=0)
                         predictions_next_conc = tf.concat([predictions_next_conc,Networks[Net].next_predictions], axis=0)
-                        logit_c3_conc = tf.conat([Networks[Net].logit_c3d], axis=0)
-                        inference_logit_conc = tf.conat([Networks[Net].inference_logit], axis=0)
-                        help_inference_logit_conc = tf.conat([Networks[Net].help_inference_logit], axis=0)
-                        next_logit_conc = tf.conat([Networks[Net].next_logit], axis=0)
-                        autoenc_out_conc = tf.conat([Networks[Net].autoenc_out], axis=0)
-                        c3d_out_conc = tf.conat([Networks[Net].c3d_out], axis=0)
+                        logit_c3_conc = tf.concat([Networks[Net].logit_c3d], axis=0)
+                        inference_logit_conc = tf.concat([Networks[Net].inference_logit], axis=0)
+                        help_inference_logit_conc = tf.concat([Networks[Net].help_inference_logit], axis=0)
+                        next_logit_conc = tf.concat([Networks[Net].next_logit], axis=0)
+                        autoenc_out_conc = tf.concat([Networks[Net].autoenc_out], axis=0)
+                        c3d_out_conc = tf.concat([Networks[Net].c3d_out], axis=0)
                         z +=1
 
             with tf.name_scope('Metrics_calculation'):
@@ -372,18 +372,6 @@ class Training:
 
                 with tf.name_scope("Autoencoder_Loss"):
                     auto_enc_loss_sum=tf.reduce_sum(tf.square(autoenc_out_conc-c3d_out_conc))
-
-                # with tf.name_scope("Global_Loss"):
-                #     self.c3d_loss_cast = tf.cast(self.c3d_loss, tf.float64)
-                #     self.now_loss_cast = tf.cast(self.now_loss, tf.float64)
-                #     self.next_loss_cast = tf.cast(self.next_loss, tf.float64)
-                #     self.auto_enc_loss_cast = tf.cast(self.auto_enc_loss, tf.float64)
-                #     self.help_loss_cast = tf.cast(self.help_loss, tf.float64)
-                #     c3d_par = tf.pow(self.c3d_recall,1)
-                #     now_par = tf.pow(self.now_recall,1)
-                #     next_par = tf.pow(self.next_recall,1)
-                #     self.total_loss = (c3d_par)*(now_par*(next_par*self.help_loss_cast + (1-next_par)*self.next_loss_cast) + (1-now_par)*self.now_loss_cast) + (1 - c3d_par) * self.c3d_loss_cast + self.auto_enc_loss_cast
-                    # total_loss = c3d_loss_sum + help_loss_sum + next_loss_sum + now_loss_sum + auto_enc_loss_sum
 
             with tf.name_scope("Optimizer"):
 
