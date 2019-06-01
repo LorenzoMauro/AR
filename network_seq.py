@@ -260,50 +260,6 @@ class activity_network:
                 self.predictions_c3d = tf.argmax(input=self.softmax_c3d, axis=2, name="c3d_prediction")
                 self.c3d_one_hot_prediction= tf.one_hot(self.predictions_c3d, depth = self.softmax_c3d.shape[-1])
 
-            with tf.name_scope('Metrics_calculation'):
-                    c3d_precision, self.c3d_recall, c3d_f1, c3d_accuracy = self.accuracy_metrics(self.c3d_one_hot_prediction, self.now_one_hot_label[:,:-1,:])
-                    now_precision, self.now_recall, now_f1, now_accuracy = self.accuracy_metrics(self.inference_one_hot_prediction, self.now_one_hot_label[:,:-1,:])
-                    next_precision, self.next_recall, next_f1, next_accuracy = self.accuracy_metrics(self.next_one_hot_prediction, self.next_one_hot_label)
-                    help_precision, self.help_recall, help_f1, help_accuracy = self.accuracy_metrics(self.help_inference_one_hot_prediction, self.help_one_hot_label[:,:-1,:])
-                    action_inference_precision, self.action_inference_recall, action_inference_f1, action_accuracy = self.accuracy_metrics(self.help_inference_one_hot_prediction[:,0,:], self.help_one_hot_label[:,0,:])
-                    object_inference_precision, self.object_inference_recall, object_inference_f1, object_inference_accuracy = self.accuracy_metrics(self.help_inference_one_hot_prediction[:,1,:], self.help_one_hot_label[:,1,:])
-                    place_inference_precision, self.place_inference_recall, place_inference_f1, place_inference_accuracy = self.accuracy_metrics(self.help_inference_one_hot_prediction[:,2,:], self.help_one_hot_label[:,2,:])
-
-            with tf.name_scope('Loss'):
-                with tf.name_scope("C3d_Loss"):
-                    cross_entropy_c3d_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.now_one_hot_label[:,:-1,:], logits=self.logit_c3d)
-                    # c3d_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_c3d_vec, transpose_b=True))
-                    self.c3d_loss = tf.reduce_sum(cross_entropy_c3d_vec)
-
-                with tf.name_scope("Now_Loss"):
-                    cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.now_one_hot_label[:,:-1,:], logits=self.inference_logit)
-                    # now_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_Now_vec, transpose_b=True))
-                    self.now_loss = tf.reduce_sum(cross_entropy_Now_vec)
-
-                with tf.name_scope("help_Loss"):
-                    cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.help_one_hot_label[:,:-1,:], logits=self.help_inference_logit)
-                    # help_loss = tf.reduce_mean(tf.matmul(self.help_weight[z,:,:-1 ], cross_entropy_help_vec, transpose_b=True))
-                    self.help_loss = tf.reduce_sum(cross_entropy_help_vec)
-
-                with tf.name_scope("Next_Loss"):
-                    cross_entropy_Next_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.next_one_hot_label, logits=self.next_logit)
-                    # next_loss = tf.reduce_mean(tf.tensordot(self.next_weight[z,...], cross_entropy_Next_vec, axes=1))
-                    self.next_loss = tf.reduce_sum(cross_entropy_Next_vec)
-
-                with tf.name_scope("Autoencoder_Loss"):
-                    self.auto_enc_loss=tf.reduce_sum(tf.square(self.autoenc_out-self.c3d_out))
-
-                # with tf.name_scope("Global_Loss"):
-                #     self.c3d_loss_cast = tf.cast(self.c3d_loss, tf.float64)
-                #     self.now_loss_cast = tf.cast(self.now_loss, tf.float64)
-                #     self.next_loss_cast = tf.cast(self.next_loss, tf.float64)
-                #     self.auto_enc_loss_cast = tf.cast(self.auto_enc_loss, tf.float64)
-                #     self.help_loss_cast = tf.cast(self.help_loss, tf.float64)
-                #     c3d_par = tf.pow(self.c3d_recall,1)
-                #     now_par = tf.pow(self.now_recall,1)
-                #     next_par = tf.pow(self.next_recall,1)
-                #     self.total_loss = (c3d_par)*(now_par*(next_par*self.help_loss_cast + (1-next_par)*self.next_loss_cast) + (1-now_par)*self.now_loss_cast) + (1 - c3d_par) * self.c3d_loss_cast + self.auto_enc_loss_cast
-                    # total_loss = c3d_loss_sum + help_loss_sum + next_loss_sum + now_loss_sum + auto_enc_loss_sum
             
     def _variable_with_weight_decay(self, name, shape, stddev, wd):
         var = tf.get_variable(name, shape, initializer=tf.truncated_normal_initializer(stddev=stddev))
@@ -320,21 +276,6 @@ class activity_network:
     def max_pool(self, name, l_input, k):
         return tf.nn.max_pool3d(l_input, ksize=[1, k, 2, 2, 1], strides=[1, k, 2, 2, 1], padding='SAME', name=name)
 
-    def accuracy_metrics(self, predicted, actual):
-        with tf.name_scope('accuracy_metrics'):
-            predicted = tf.cast(predicted, tf.int64)
-            actual = tf.cast(actual, tf.int64)
-            TP = tf.count_nonzero(predicted * actual)
-            TN = tf.count_nonzero((predicted - 1) * (actual - 1))
-            FP = tf.count_nonzero(predicted * (actual - 1))
-            FN = tf.count_nonzero((predicted - 1) * actual)
-            precision = TP / (TP + FP)
-            recall = TP / (TP + FN)
-            f1 = 2 * precision * recall / (precision + recall)
-            # accuracy = (TP) / (TP + FP + TN + FN)
-            # accuracy = (TP) / (TP + FP + TN + FN)
-            accuracy = (TP + TN) / (TP + FP + TN + FN)
-        return precision, recall, f1, accuracy
 
 class Training:
     def __init__(self,Networks, IO_tool):
@@ -377,13 +318,12 @@ class Training:
                         next_loss_sum = Networks[Net].next_loss
                         auto_enc_loss_sum = Networks[Net].auto_enc_loss
                         help_loss_sum = Networks[Net].help_loss
-                        c3d_recall = Networks[Net].c3d_recall
-                        inference_recall = Networks[Net].now_recall
-                        next_recall = Networks[Net].next_recall
-                        help_inference_recall = Networks[Net].help_recall
-                        action_inference_recall = Networks[Net].action_inference_recall
-                        object_inference_recall = Networks[Net].object_inference_recall
-                        place_inference_recall = Networks[Net].place_inference_recall
+                        logit_c3_conc = Networks[Net].logit_c3
+                        inference_logit_conc = Networks[Net].inference_logit
+                        help_inference_logit_conc = Networks[Net].help_inference_logit
+                        next_logit_conc = Networks[Net].next_logit
+                        autoenc_out_conc = Networks[Net].autoenc_out
+                        c3d_out_conc = Networks[Net].c3d_out
                         z +=1
                     else:
                         c3d_pred_conc = tf.concat([c3d_pred_conc, Networks[Net].c3d_one_hot_prediction], axis=0)
@@ -402,23 +342,58 @@ class Training:
                         next_loss_sum += Networks[Net].next_loss
                         auto_enc_loss_sum += Networks[Net].auto_enc_loss
                         help_loss_sum += Networks[Net].help_loss
-                        c3d_recall += Networks[Net].c3d_recall
-                        inference_recall += Networks[Net].now_recall
-                        next_recall += Networks[Net].next_recall
-                        help_inference_recall += Networks[Net].help_recall
-                        action_inference_recall += Networks[Net].action_inference_recall
-                        object_inference_recall += Networks[Net].object_inference_recall
-                        place_inference_recall += Networks[Net].place_inference_recall
+                        logit_c3_conc = tf.conat([Networks[Net].logit_c3], axis=0)
+                        inference_logit_conc = tf.conat([Networks[Net].inference_logit], axis=0)
+                        help_inference_logit_conc = tf.conat([Networks[Net].help_inference_logit], axis=0)
+                        next_logit_conc = tf.conat([Networks[Net].next_logit], axis=0)
+                        autoenc_out_conc = tf.conat([Networks[Net].autoenc_out], axis=0)
+                        c3d_out_conc = tf.conat([Networks[Net].c3d_out], axis=0)
                         z +=1
 
+            with tf.name_scope('Metrics_calculation'):
+                    c3d_precision, c3d_recall, c3d_f1, c3d_accuracy = self.accuracy_metrics(c3d_pred_conc, now_label_conc[:,:-1,:])
+                    now_precision, now_recall, now_f1, now_accuracy = self.accuracy_metrics(now_pred_conc, now_label_conc[:,:-1,:])
+                    next_precision, next_recall, next_f1, next_accuracy = self.accuracy_metrics(next_pred_conc, next_label_conc)
+                    help_precision, help_recall, help_f1, help_accuracy = self.accuracy_metrics(help_pred_conc, help_label_conc[:,:-1,:])
+                    action_inference_precision, action_inference_recall, action_inference_f1, action_accuracy = self.accuracy_metrics(help_pred_conc[:,0,:], help_label_conc[:,0,:])
+                    object_inference_precision, object_inference_recall, object_inference_f1, object_inference_accuracy = self.accuracy_metrics(help_pred_conc[:,1,:], help_label_conc[:,1,:])
+                    place_inference_precision, place_inference_recall, place_inference_f1, place_inference_accuracy = self.accuracy_metrics(help_pred_conc[:,2,:], help_label_conc[:,2,:])
 
-                c3d_recall /= z
-                inference_recall /= z
-                next_recall /= z
-                help_inference_recall /= z
-                action_inference_recall /= z
-                object_inference_recall /= z
-                place_inference_recall /= z
+            with tf.name_scope('Loss'):
+                with tf.name_scope("C3d_Loss"):
+                    cross_entropy_c3d_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=now_label_conc[:,:-1,:], logits=logit_c3_conc)
+                    # c3d_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_c3d_vec, transpose_b=True))
+                    self.c3d_loss = tf.reduce_sum(cross_entropy_c3d_vec)
+
+                with tf.name_scope("Now_Loss"):
+                    cross_entropy_Now_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=now_label_conc[:,:-1,:], logits=inference_logit_conc)
+                    # now_loss = tf.reduce_mean(tf.matmul(self.now_weight[z,:,:-1], cross_entropy_Now_vec, transpose_b=True))
+                    self.now_loss = tf.reduce_sum(cross_entropy_Now_vec)
+
+                with tf.name_scope("help_Loss"):
+                    cross_entropy_help_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=help_label_conc[:,:-1,:], logits=help_inference_logit_conc)
+                    # help_loss = tf.reduce_mean(tf.matmul(self.help_weight[z,:,:-1 ], cross_entropy_help_vec, transpose_b=True))
+                    self.help_loss = tf.reduce_sum(cross_entropy_help_vec)
+
+                with tf.name_scope("Next_Loss"):
+                    cross_entropy_Next_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=next_label_conc, logits=next_logit_conc)
+                    # next_loss = tf.reduce_mean(tf.tensordot(self.next_weight[z,...], cross_entropy_Next_vec, axes=1))
+                    self.next_loss = tf.reduce_sum(cross_entropy_Next_vec)
+
+                with tf.name_scope("Autoencoder_Loss"):
+                    self.auto_enc_loss=tf.reduce_sum(tf.square(autoenc_out_conc-c3d_out_conc))
+
+                # with tf.name_scope("Global_Loss"):
+                #     self.c3d_loss_cast = tf.cast(self.c3d_loss, tf.float64)
+                #     self.now_loss_cast = tf.cast(self.now_loss, tf.float64)
+                #     self.next_loss_cast = tf.cast(self.next_loss, tf.float64)
+                #     self.auto_enc_loss_cast = tf.cast(self.auto_enc_loss, tf.float64)
+                #     self.help_loss_cast = tf.cast(self.help_loss, tf.float64)
+                #     c3d_par = tf.pow(self.c3d_recall,1)
+                #     now_par = tf.pow(self.now_recall,1)
+                #     next_par = tf.pow(self.next_recall,1)
+                #     self.total_loss = (c3d_par)*(now_par*(next_par*self.help_loss_cast + (1-next_par)*self.next_loss_cast) + (1-now_par)*self.now_loss_cast) + (1 - c3d_par) * self.c3d_loss_cast + self.auto_enc_loss_cast
+                    # total_loss = c3d_loss_sum + help_loss_sum + next_loss_sum + now_loss_sum + auto_enc_loss_sum
 
             with tf.name_scope("Optimizer"):
 
@@ -429,10 +404,10 @@ class Training:
                     self.auto_enc_loss_cast = tf.cast(auto_enc_loss_sum, tf.float64)
                     self.help_loss_cast = tf.cast(help_loss_sum, tf.float64)
                     c3d_par = tf.pow(c3d_recall,1)
-                    now_par = tf.pow(inference_recall,1)
+                    now_par = tf.pow(help_recall,1)
                     next_par = tf.pow(next_recall,1)
                     self.total_loss = (c3d_par)*(now_par*(next_par*self.help_loss_cast + (1-next_par)*self.next_loss_cast) + (1-now_par)*self.now_loss_cast) + (1 - c3d_par) * self.c3d_loss_cast + self.auto_enc_loss_cast
-                    self.total_loss = self.now_loss_cast + self.next_loss_cast +self.auto_enc_loss_cast+self.help_loss_cast+self.c3d_loss_cast
+                    # self.total_loss = self.now_loss_cast + self.next_loss_cast +self.auto_enc_loss_cast+self.help_loss_cast+self.c3d_loss_cast
 
                 Train_variable = [v for v in self.variables if 'Openpose' not in v.name.split('/')[0]]
                 Train_variable = [v for v in Train_variable if 'MobilenetV1' not in v.name.split('/')[0]]
@@ -525,3 +500,19 @@ class Training:
                 init_global = tf.global_variables_initializer()
                 init_local = tf.local_variables_initializer()
                 self.init = tf.group(init_local, init_global)
+    
+    def accuracy_metrics(self, predicted, actual):
+        with tf.name_scope('accuracy_metrics'):
+            predicted = tf.cast(predicted, tf.int64)
+            actual = tf.cast(actual, tf.int64)
+            TP = tf.count_nonzero(predicted * actual)
+            TN = tf.count_nonzero((predicted - 1) * (actual - 1))
+            FP = tf.count_nonzero(predicted * (actual - 1))
+            FN = tf.count_nonzero((predicted - 1) * actual)
+            precision = TP / (TP + FP)
+            recall = TP / (TP + FN)
+            f1 = 2 * precision * recall / (precision + recall)
+            # accuracy = (TP) / (TP + FP + TN + FN)
+            # accuracy = (TP) / (TP + FP + TN + FN)
+            accuracy = (TP + TN) / (TP + FP + TN + FN)
+        return precision, recall, f1, accuracy
