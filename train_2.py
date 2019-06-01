@@ -61,7 +61,7 @@ def train():
         training = True
         with tf.name_scope('whole_saver'):
             whole_saver = tf.train.Saver()
-        # whole_saver.save(sess, config.model_filename, global_step=0)
+        whole_saver.save(sess, config.model_filename, global_step=0)
         pbar_whole = tqdm(total=(config.tot_steps), desc='Step')
         confusion_tool = confusion_tool_class(number_of_classes, IO_tool, sess, Train_Net)
         while step < config.tot_steps:
