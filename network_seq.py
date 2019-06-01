@@ -412,9 +412,9 @@ class Training:
 
                 with tf.name_scope('recall'):
                     tf.summary.scalar('2_c3d_recall', c3d_recall)
-                    tf.summary.scalar('2_now_inference_recall', inference_recall)
+                    tf.summary.scalar('2_now_inference_recall', now_recall)
                     tf.summary.scalar('2_next_recall', next_recall)
-                    tf.summary.scalar('2_help_inference_recall', help_inference_recall)
+                    tf.summary.scalar('2_help_inference_recall', help_recall)
 
                 with tf.name_scope('help_recal_by_word'):
                     tf.summary.scalar('3_action_inference_recall', action_inference_recall)
