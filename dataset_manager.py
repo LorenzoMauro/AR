@@ -180,7 +180,7 @@ class Dataset:
         files_path = {}
         comb_count = {}
 
-        for root, dirs, files in os.walk('dataset'):
+        for root, dirs, files in os.walk(config.kit_path):
             for fl in files:
                 path = root + '/' + fl
                 if path in dataset.keys():
