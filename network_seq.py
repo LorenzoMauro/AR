@@ -265,10 +265,10 @@ class activity_network:
                     c3d_precision, self.c3d_recall, c3d_f1, c3d_accuracy = self.accuracy_metrics(self.c3d_one_hot_prediction, self.now_one_hot_label[:,:-2,:])
                     now_precision, self.now_recall, now_f1, now_accuracy = self.accuracy_metrics(self.inference_one_hot_prediction, self.now_one_hot_label[:,:-2,:])
                     next_precision, self.next_recall, next_f1, next_accuracy = self.accuracy_metrics(self.next_one_hot_prediction, self.next_one_hot_label)
-                    help_precision, self.help_recall, help_f1, help_accuracy = self.accuracy_metrics(self.help_inference_one_hot_prediction, self.help_inference_one_hot_prediction[:,:-2,:])
-                    action_inference_precision, self.action_inference_recall, action_inference_f1, action_accuracy = self.accuracy_metrics(self.help_inference_one_hot_prediction[:,0,:], self.help_action_target[:,0,:])
-                    object_inference_precision, self.object_inference_recall, object_inference_f1, object_inference_accuracy = self.accuracy_metrics(self.help_inference_one_hot_prediction[:,1,:], self.help_action_target[:,1,:])
-                    place_inference_precision, self.place_inference_recall, place_inference_f1, place_inference_accuracy = self.accuracy_metrics(self.help_inference_one_hot_prediction[:,2,:], self.help_action_target[:,2,:])
+                    help_precision, self.help_recall, help_f1, help_accuracy = self.accuracy_metrics(self.help_inference_one_hot_prediction, self.help_one_hot_label[:,:-2,:])
+                    action_inference_precision, self.action_inference_recall, action_inference_f1, action_accuracy = self.accuracy_metrics(self.help_inference_one_hot_prediction[:,0,:], self.help_one_hot_label[:,0,:])
+                    object_inference_precision, self.object_inference_recall, object_inference_f1, object_inference_accuracy = self.accuracy_metrics(self.help_inference_one_hot_prediction[:,1,:], self.help_one_hot_label[:,1,:])
+                    place_inference_precision, self.place_inference_recall, place_inference_f1, place_inference_accuracy = self.accuracy_metrics(self.help_inference_one_hot_prediction[:,2,:], self.help_one_hot_label[:,2,:])
 
             with tf.name_scope('Loss'):
                 with tf.name_scope("C3d_Loss"):
