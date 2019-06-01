@@ -65,18 +65,18 @@ class activity_network:
 
             with tf.name_scope("Now_Target"):
                 self.labels = Input_manager.labels[device_j, :, :]
-                now_dec_input = tf.concat([tf.fill([self.batch_size, 1], IO_tool.dataset.word_to_id['go']), self.labels], 1)
+                # now_dec_input = tf.concat([tf.fill([self.batch_size, 1], IO_tool.dataset.word_to_id['go']), self.labels], 1)
                 self.now_one_hot_label= tf.one_hot(self.labels, depth = self.out_vocab_size)
-                now_dec_embed_input = tf.nn.embedding_lookup(Input_manager.dec_embeddings, now_dec_input)
-                now_target_len = tf.ones(shape=(self.batch_size), dtype=tf.int32)*(config.seq_len + 1)
+                # now_dec_embed_input = tf.nn.embedding_lookup(Input_manager.dec_embeddings, now_dec_input)
+                # now_target_len = tf.ones(shape=(self.batch_size), dtype=tf.int32)*(config.seq_len + 1)
             
             with tf.name_scope("Help_Target"):
                 self.help_labels = Input_manager.help_labels[device_j, :, :]
                 self.help_labels.set_shape([None, 4])
-                help_dec_input = tf.concat([tf.fill([self.batch_size, 1], IO_tool.dataset.word_to_id['go']), self.help_labels], 1)
+                # help_dec_input = tf.concat([tf.fill([self.batch_size, 1], IO_tool.dataset.word_to_id['go']), self.help_labels], 1)
                 self.help_one_hot_label= tf.one_hot(self.help_labels, depth = self.out_vocab_size)
-                help_dec_embed_input = tf.nn.embedding_lookup(Input_manager.dec_embeddings, help_dec_input)
-                help_target_len = tf.ones(shape=(self.batch_size), dtype=tf.int32)*(4)
+                # help_dec_embed_input = tf.nn.embedding_lookup(Input_manager.dec_embeddings, help_dec_input)
+                # help_target_len = tf.ones(shape=(self.batch_size), dtype=tf.int32)*(4)
 
             with tf.name_scope("Next_Target"):
                 self.next_labels = Input_manager.next_labels[device_j, :]
@@ -202,7 +202,8 @@ class activity_network:
                                                         IO_tool.dataset.word_to_id['end'], config.seq_len +1 , self.out_vocab_size, now_output_layer,
                                                         self.batch_size)
                 paddings = [[0, 0], [0, (config.seq_len + 1)-tf.shape(self.inference_logit)[1]], [0,0 ]]
-                self.inference_logit = tf.pad(self.inference_logit, paddings, 'CONSTANT', constant_values = 1)[:,:-1, :]
+                self.inference_logit = tf.pad(self.inference_logit, paddings, 'CONSTANT', constant_values = 1)[:,:-2, :]
+                print(self.inference_logit)
                 self.inference_softmax, self.inference_predictions, self.inference_one_hot_prediction = lstm_classifier(self.inference_logit) 
 
             # with tf.name_scope('Now_Decoder_train'):
@@ -237,7 +238,7 @@ class activity_network:
                                                         IO_tool.dataset.word_to_id['end'], 4 , self.out_vocab_size, help_output_layer,
                                                         self.batch_size)
                 paddings = [[0, 0], [0, 4-tf.shape(self.help_inference_logit)[1]], [0,0 ]]
-                self.help_inference_logit = tf.pad(self.help_inference_logit, paddings, 'CONSTANT', constant_values = 1)[:,:-1,:]
+                self.help_inference_logit = tf.pad(self.help_inference_logit, paddings, 'CONSTANT', constant_values = 1)[:,:-2,:]
                 self.help_inference_softmax, self.help_inference_predictions, self.help_inference_one_hot_prediction = lstm_classifier(self.help_inference_logit)  
 
             # with tf.name_scope('Help_classifier_train'):
