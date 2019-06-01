@@ -203,7 +203,6 @@ class activity_network:
                                                         self.batch_size)
                 paddings = [[0, 0], [0, (config.seq_len + 1)-tf.shape(self.inference_logit)[1]], [0,0 ]]
                 self.inference_logit = tf.pad(self.inference_logit, paddings, 'CONSTANT', constant_values = 1)
-                print(self.inference_logit)
                 self.inference_softmax, self.inference_predictions, self.inference_one_hot_prediction = lstm_classifier(self.inference_logit) 
 
             # with tf.name_scope('Now_Decoder_train'):
@@ -363,13 +362,11 @@ class Training:
                 for Net in Networks:
                     if z == 0:
                         c3d_pred_conc = Networks[Net].c3d_one_hot_prediction
-                        now_pred_conc = Networks[Net].now_one_hot_prediction
-                        now_inf_pred_conc = Networks[Net].inference_one_hot_prediction
+                        now_pred_conc = Networks[Net].inference_one_hot_prediction
                         next_pred_conc = Networks[Net].next_one_hot_prediction
                         now_label_conc = Networks[Net].now_one_hot_label
                         next_label_conc = Networks[Net].next_one_hot_label
-                        help_pred_conc = Networks[Net].help_one_hot_prediction
-                        help_inf_pred_conc = Networks[Net].help_inference_one_hot_prediction
+                        help_pred_conc = Networks[Net].help_inference_one_hot_prediction
                         help_label_conc = Networks[Net].help_one_hot_label
                         predictions_c3d_conc = Networks[Net].predictions_c3d
                         predictions_now_conc = Networks[Net].inference_predictions
@@ -392,12 +389,10 @@ class Training:
                     else:
                         c3d_pred_conc = tf.concat([c3d_pred_conc, Networks[Net].c3d_one_hot_prediction], axis=0)
                         now_pred_conc = tf.concat([now_pred_conc, Networks[Net].now_one_hot_prediction], axis=0)
-                        now_inf_pred_conc = tf.concat([now_inf_pred_conc, Networks[Net].inference_one_hot_prediction], axis=0)
                         next_pred_conc = tf.concat([next_pred_conc, Networks[Net].next_one_hot_prediction], axis=0)
                         now_label_conc = tf.concat([now_label_conc, Networks[Net].now_one_hot_label], axis=0)
                         next_label_conc = tf.concat([next_label_conc, Networks[Net].next_one_hot_label], axis=0)
                         help_pred_conc = tf.concat([help_pred_conc, Networks[Net].help_one_hot_prediction], axis=0)
-                        help_inf_pred_conc = tf.concat([help_inf_pred_conc, Networks[Net].help_inference_one_hot_prediction], axis=0)
                         help_label_conc = tf.concat([help_label_conc, Networks[Net].help_one_hot_label], axis=0)
                         predictions_c3d_conc = tf.concat([predictions_c3d_conc,Networks[Net].predictions_c3d], axis=0)
                         predictions_now_conc = tf.concat([predictions_now_conc,Networks[Net].inference_predictions], axis=0)
