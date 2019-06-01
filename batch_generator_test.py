@@ -212,7 +212,7 @@ class IO_manager:
             pass
         return final_label
     def extract_preprocessed_one_input(self, video_path, segment, pbar):
-        one_input = np.zeros(shape=(config.frames_per_step, config.out_H, config.out_W, 7), dtype=float)
+        one_input = np.zeros(shape=(config.frames_per_step, config.out_H, config.out_W, 7), dtype=np.uint8)
         extracted_frames = {}
         frame_list = []
         try:

@@ -78,6 +78,17 @@ for fl in help_dataset:
     # print('NEW')
     # pp.pprint(help_dataset[fl])
 
+    # translation next help into previous sil help
+    pp.pprint(help_dataset[fl])
+
+    for idx in range(len(help_dataset[fl])-1):        
+        entry = help_dataset[fl][idx]
+        if entry['label'].split(':')[1] == 'sil':
+            if help_dataset[fl][idx+1]['label'].split(':')[0] != entry['label'].split(':')[0]:
+                entry['label']=help_dataset[fl][idx+1]['label']
+
+    pp.pprint(help_dataset[fl])
+
     #map start time to entry
     for idx in range(len(help_dataset[fl])):        
         entry = help_dataset[fl][idx]
