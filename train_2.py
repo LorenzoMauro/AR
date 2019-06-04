@@ -155,6 +155,7 @@ def train():
                         pbar_val = tqdm(total=(config.tasks * config.Batch_size * config.seq_len * len(available_gpus) * config.frames_per_step + len(available_gpus)*config.tasks - 1), leave=False, desc='Validation Generation')
 
                         val_batch = IO_tool.compute_batch(pbar_val, Devices=len(available_gpus), Train=False, augment=False)
+                        pbar_val_batch = tqdm(total=len(val_batch), leave=False, desc='Validation run')
 
                         for batch in val_batch:
 
@@ -197,36 +198,36 @@ def train():
                                                                   help_label,
                                                                   help_softmax)
 
-                                
+                            target_now = np.reshape(batch['Y'][...,:4], (-1, 1))
+                            pred_now = np.reshape(now_pred[...,:4], (-1, 1))
 
-                                target_now = np.reshape(batch['Y'][...,:4], (-1, 1))
-                                pred_now = np.reshape(now_pred[...,:4], (-1, 1))
+                            target_c3d =np.reshape(batch['Y'][...,:4], (-1, 1))
+                            pred_c3d = np.reshape(c3d_pred, (-1, 1))
 
-                                target_c3d =np.reshape(batch['Y'][...,:4], (-1, 1))
-                                pred_c3d = np.reshape(c3d_pred, (-1, 1))
+                            target_next = np.reshape(batch['next_Y'], (-1,1))
+                            pred_next = np.reshape(next_pred, (-1,1))
 
-                                target_next = np.reshape(batch['next_Y'], (-1,1))
-                                pred_next = np.reshape(next_pred, (-1,1))
+                            target_help = np.reshape(batch['help_Y'][...,:3], (-1, 1))
+                            pred_help = np.reshape(help_pred[...,:3], (-1, 1))
 
-                                target_help = np.reshape(batch['help_Y'][...,:3], (-1, 1))
-                                pred_help = np.reshape(help_pred[...,:3], (-1, 1))
-
-                                data_collection = {}
-                                data_collection['now_train'] = {}
-                                data_collection['now_train']['taget'] = target_now
-                                data_collection['now_train']['y_pred'] = pred_now
-                                data_collection['c3d_train'] = {}
-                                data_collection['c3d_train']['taget'] = target_c3d
-                                data_collection['c3d_train']['y_pred'] = pred_c3d
-                                data_collection['next_train'] = {}
-                                data_collection['next_train']['taget'] = target_next
-                                data_collection['next_train']['y_pred'] = pred_next
-                                data_collection['help_train'] = {}
-                                data_collection['help_train']['taget'] = target_help
-                                data_collection['help_train']['y_pred'] = pred_help
-                                confusion_tool.update_confusion(data_collection, val_writer, step)
+                            data_collection = {}
+                            data_collection['now_train'] = {}
+                            data_collection['now_train']['taget'] = target_now
+                            data_collection['now_train']['y_pred'] = pred_now
+                            data_collection['c3d_train'] = {}
+                            data_collection['c3d_train']['taget'] = target_c3d
+                            data_collection['c3d_train']['y_pred'] = pred_c3d
+                            data_collection['next_train'] = {}
+                            data_collection['next_train']['taget'] = target_next
+                            data_collection['next_train']['y_pred'] = pred_next
+                            data_collection['help_train'] = {}
+                            data_collection['help_train']['taget'] = target_help
+                            data_collection['help_train']['y_pred'] = pred_help
+                            pbar_val_batch.update(1)
+                            confusion_tool.update_confusion(data_collection, val_writer, val_step)
                             val_writer.add_summary(summary, val_step + config.Batch_size*len(available_gpus))
                             val_step += 1
+                        pbar_val_batch.close()
 
                     IO_tool.save_hidden_state_collection()
                     IO_tool.save_output_collection()

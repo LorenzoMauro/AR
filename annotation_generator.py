@@ -137,7 +137,7 @@ class Annotation:
                     elif fl in activity_dataset.keys():
                         files_path[fl] = path
 
-            pp.pprint(files_path)
+            # pp.pprint(files_path)
             pbar = tqdm(total=(len(files_path)), leave=False, desc='Generating Frame')
 
             for entry in files_path:
