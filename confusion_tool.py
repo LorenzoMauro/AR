@@ -63,7 +63,7 @@ class confusion_tool:
         return cm
 
     def update_plot(self, cm_in, step, tensor_name, log_file):
-        cm = cm_in / cm_in.astype(np.float).sum(axis=0)
+        cm = cm_in / cm_in.astype(np.float).sum(axis=1)
         fig = matplotlib.figure.Figure(figsize=(5.5, 5.5), dpi=200, facecolor='w', edgecolor='k')
         ax = fig.add_subplot(1, 1, 1)
         im = ax.imshow(cm, cmap='Oranges')
