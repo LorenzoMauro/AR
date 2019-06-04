@@ -53,7 +53,15 @@ def train():
         # Loading initial C3d or presaved network
         if os.path.isfile('./checkpoint/checkpoint') and config.load_pretrained_weigth:
             print('new model loaded')
-            Train_Net.model_saver.restore(sess, tf.train.latest_checkpoint('./checkpoint'))
+            ckpts = tf.train.latest_checkpoint('./checkpoint')
+            vars_in_checkpoint = tf.train.list_variables(ckpts)
+            var_rest = []
+            for el in vars_in_checkpoint:
+                var_rest.append(el[0])
+            variables = tf.contrib.slim.get_variables_to_restore()
+            var_list = [v for v in variables if v.name.split(':')[0] in var_rest]
+            loader = tf.train.Saver(var_list=var_list)
+            loader.restore(sess, ckpts)
         elif config.load_c3d:
             print('original c3d loaded')
             Train_Net.c3d_loader.restore(sess, config.c3d_ucf_weights)
