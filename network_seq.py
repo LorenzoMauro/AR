@@ -337,12 +337,7 @@ class Training:
                 help_loc_pred = help_inf_pred_conc[...,2,:]
 
                 with tf.name_scope('Metrics_calculation'):
-                    print(c3d_pred_conc[:,:-1,:])
-                    print(now_label_conc[:,:-1,:])
-                    print(now_inf_pred_conc[:,:-1,:])
-                    print(help_label_conc[:,:-1,:])
-                    print(help_inf_pred_conc[:,:-1,:])
-                    c3d_precision, c3d_recall, c3d_f1, c3d_accuracy = self.accuracy_metrics(c3d_pred_conc[:,:-1,:], now_label_conc[:,:-1,:])
+                    c3d_precision, c3d_recall, c3d_f1, c3d_accuracy = self.accuracy_metrics(c3d_pred_conc, now_label_conc[:,:-1,:])
                     # now_precision, now_recall, now_f1, now_accuracy = self.accuracy_metrics(now_pred_conc, now_label_conc)
                     inference_precision, inference_recall, inference_f1, inference_accuracy = self.accuracy_metrics(now_inf_pred_conc[:,:-1,:], now_label_conc[:,:-1,:])
                     next_precision, next_recall, next_f1, next_accuracy = self.accuracy_metrics(next_pred_conc, next_label_conc)
