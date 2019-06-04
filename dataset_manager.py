@@ -133,7 +133,8 @@ class Dataset:
             new_test_video = random.choice(list(self.ordered_collection.keys()))
             test_path.append(new_test_video)
             if len(test_path) == entry_val + 1:
-                if not any('robot' in path for path in test_path):
+                test_with_robot = [x for x in test_path if 'robot' in x]
+                if len(test_with_robot) <2:
                     test_path = []
 
         train_path = []
