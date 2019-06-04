@@ -44,6 +44,7 @@ class confusion_tool:
         self.name_to_summary['help_val'] = Train_Net.help_val_confusion
         
     def init_matrixes(self):
+        print('\n resetting confusions \n')
         self.now_train = np.zeros((self.number_of_classes, self.number_of_classes), dtype=np.int32)
         self.c3d_train= np.zeros((self.number_of_classes, self.number_of_classes), dtype=np.int32)
         self.next_train = np.zeros((self.number_of_classes, self.number_of_classes), dtype=np.int32)
