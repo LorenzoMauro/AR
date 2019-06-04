@@ -106,16 +106,16 @@ class activity_network:
 
                     # Convolution Layer
                     with tf.name_scope("Conv"):
-                        conv4 = self.conv3d('conv4a', pool3, wc['wc4a'], bc['bc4a'])
-                        conv4 = tf.nn.leaky_relu(conv4, name='relu4a')
+                        # conv4 = self.conv3d('conv4a', pool3, wc['wc4a'], bc['bc4a'])
+                        # conv4 = tf.nn.leaky_relu(conv4, name='relu4a')
                         conv4 = self.conv3d('conv4b', conv4, wc['wc4b'], bc['bc4b'])
                         conv4 = tf.nn.leaky_relu(conv4, name='relu4b')
                         pool4 = self.max_pool('pool4', conv4, k=2)
 
                     # Convolution Layer
                     with tf.name_scope("Conv"):
-                        conv5 = self.conv3d('conv5a', pool4, wc['wc5a'], bc['bc5a'])
-                        conv5 = tf.nn.leaky_relu(conv5, name='relu5a')
+                        # conv5 = self.conv3d('conv5a', pool4, wc['wc5a'], bc['bc5a'])
+                        # conv5 = tf.nn.leaky_relu(conv5, name='relu5a')
                         conv5 = self.conv3d('conv5b', conv5, wc['wc5b'], bc['bc5b'])
                         conv5 = tf.nn.leaky_relu(conv5, name='relu5b')
                         pool5 = self.max_pool('pool5', conv5, k=2)
@@ -341,6 +341,9 @@ class Training:
                         z +=1
 
             with tf.name_scope('Metrics_calculation'):
+                    print(c3d_pred_conc)
+                    print(now_pred_conc)
+                    print(now_label_conc)
                     c3d_precision, c3d_recall, c3d_f1, c3d_accuracy = self.accuracy_metrics(c3d_pred_conc, now_label_conc[:,:-1,:])
                     now_precision, now_recall, now_f1, now_accuracy = self.accuracy_metrics(now_pred_conc, now_label_conc[:,:-1,:])
                     next_precision, next_recall, next_f1, next_accuracy = self.accuracy_metrics(next_pred_conc, next_label_conc)
