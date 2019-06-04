@@ -9,9 +9,9 @@ from matplotlib import pyplot as plt
 import pprint
 from batch_generator_test import IO_manager
 from confusion_tool import confusion_tool as confusion_tool_class
-from network_seq_old import activity_network
-from network_seq_old import Training
-from network_seq_old import Input_manager
+from network_seq import activity_network
+from network_seq import Training
+from network_seq import Input_manager
 import config
 from tensorflow.python.client import device_lib
 
