@@ -218,8 +218,8 @@ class activity_network:
                 new_H = tf.layers.dense(H_composedVec, config.lstm_units)
                 H_composedVec = tf.concat([new_C, new_H], 1)
 
-                next_dense_1 = tf.layers.dense(H_composedVec, config.pre_class)
-                self.next_logit = tf.layers.dense(next_dense_1, self.number_of_classes)
+                # next_dense_1 = tf.layers.dense(H_composedVec, config.pre_class)
+                self.next_logit = tf.layers.dense(H_composedVec, self.number_of_classes)
                 self.next_softmax = tf.nn.softmax(self.next_logit, name='softmax_out')
                 self.next_predictions = tf.argmax(input=self.next_softmax, axis=1, name="c3d_prediction")
                 self.next_one_hot_prediction= tf.one_hot(self.next_predictions, depth = self.next_softmax.shape[-1])
@@ -246,9 +246,9 @@ class activity_network:
             
             def c3d_classifier_dense(x):
                 with tf.variable_scope("c3d_classifier_dense", reuse=tf.AUTO_REUSE):
-                    out_cd = tf.layers.dense(x, config.pre_class, name="c3d_dense_1")
-                    out_cd_2 = tf.layers.dense(out_cd, config.pre_class, name="c3d_dense_2")
-                    logit = tf.layers.dense(out_cd_2, self.number_of_classes, name="c3d_dense_3")
+                    # out_cd = tf.layers.dense(x, config.pre_class, name="c3d_dense_1")
+                    # out_cd_2 = tf.layers.dense(out_cd, config.pre_class, name="c3d_dense_2")
+                    logit = tf.layers.dense(x, self.number_of_classes, name="c3d_dense_3")
                 return logit
 
             with tf.name_scope('c3d_classifier'):
