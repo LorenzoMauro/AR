@@ -19,7 +19,7 @@ class Input_manager:
                 self.c_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), None, config.lstm_units), name="c_input")
                 self.c_output = self.c_input
                 self.h_output = self.h_input
-                self.drop_out_prob = tf.placeholder_with_default(config., shape=())
+                self.drop_out_prob = tf.placeholder_with_default(config.plh_dropout, shape=())
             with tf.name_scope("Target"):
                 self.labels = tf.placeholder(tf.int32, shape=(None, None, config.seq_len + 1), name="now_label")
                 self.help_labels = tf.placeholder(tf.int32, shape=(None, None, 4), name="help_label")
