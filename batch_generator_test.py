@@ -63,7 +63,7 @@ class IO_manager:
         if not config.use_prep:
             ready_batch = self.add_pose(ready_batch, self.sess, augment)
         else:
-            ready_batch = self.augment(X, self.sess)
+            ready_batch = self.augment_input(X, self.sess)
 
         # ready_batch = self.group_batches(ready_batch, Devices, pbar)
         pbar.close()
@@ -353,7 +353,7 @@ class IO_manager:
         pbar.close()
         return X
 
-        def augment(self, X, sess, augment=True):
+        def augment_input(self, X, sess, augment=True):
             shape = (X[0])['X'].shape
             total = len(X) * shape[0] * shape[1]* shape[2]* shape[2]
             augment = 'none'
