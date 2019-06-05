@@ -229,7 +229,7 @@ class activity_network:
                 next_dense_1 = tf.nn.dropout(next_dense_1, drop_out_prob)
                 next_dense_2 = tf.layers.dense(next_dense_1, config.pre_class)
                 next_dense_2 = tf.nn.dropout(next_dense_2, drop_out_prob)
-                self.next_logit = tf.layers.dense(H_composedVec, self.number_of_classes)
+                self.next_logit = tf.layers.dense(next_dense_2, self.number_of_classes)
                 self.next_softmax = tf.nn.softmax(self.next_logit, name='softmax_out')
                 self.next_predictions = tf.argmax(input=self.next_softmax, axis=1, name="c3d_prediction")
                 self.next_one_hot_prediction= tf.one_hot(self.next_predictions, depth = self.next_softmax.shape[-1])
