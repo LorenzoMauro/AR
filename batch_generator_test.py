@@ -54,12 +54,17 @@ class IO_manager:
                     'help_weight': help_weight}
 
         pool = mp.Pool(processes=config.processes)
+        if not Train:
+            augment = False
         if Train:
             ready_batch = pool.map(multiprocess_batch, range(0, config.tasks))
         else:
             ready_batch = pool.map(multiprocess_batch, range(0, config.val_task))
         if not config.use_prep:
             ready_batch = self.add_pose(ready_batch, self.sess, augment)
+        else:
+            ready_batch = self.augment(X, self.sess):
+
         # ready_batch = self.group_batches(ready_batch, Devices, pbar)
         pbar.close()
         pool.close()
@@ -347,6 +352,30 @@ class IO_manager:
         pbar.clear()
         pbar.close()
         return X
+
+        def augment(self, X, sess, augment=True):
+            shape = (X[0])['X'].shape
+            total = len(X) * shape[0] * shape[1]* shape[2]* shape[2]
+            augment = 'none'
+            if augment:
+                augment = random.choice(['none', 'horizzontal', 'vertical', 'both'])
+            pbar = tqdm(total=total, leave=False, desc='Computing Poses')
+            for k in range(len(X)):
+                X_data = (X[k])['X']
+                shape = X_data.shape
+                for d in range(shape[0]):
+                    for i in range(shape[1]):
+                        for j in range(shape[2]):
+                            for z in range(shape[3]):
+                                Frame_Data = X_data[d, i, j, z, :, :, :]
+                                augmented = self.augment_data(Frame_Data, augment)
+                                X_data[d, i, j, z, :, :, :] = augmented
+                                pbar.update(1)
+                X[k]['X'] = X_data
+            pbar.refresh()
+            pbar.clear()
+            pbar.close()
+            return X
 
     def show_input_pic(self,X_data):
         shape = X_data.shape

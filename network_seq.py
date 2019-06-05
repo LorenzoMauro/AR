@@ -19,7 +19,7 @@ class Input_manager:
                 self.c_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), None, config.lstm_units), name="c_input")
                 self.c_output = self.c_input
                 self.h_output = self.h_input
-
+                self.drop_out_prob = tf.placeholder_with_default(0.5, shape=())
             with tf.name_scope("Target"):
                 self.labels = tf.placeholder(tf.int32, shape=(None, None, config.seq_len + 1), name="now_label")
                 self.help_labels = tf.placeholder(tf.int32, shape=(None, None, 4), name="help_label")
@@ -62,6 +62,7 @@ class activity_network:
                 self.h_input.set_shape([len(config.encoder_lstm_layers), None, config.lstm_units])
                 self.c_input = Input_manager.c_input[device_j, :, :, :]
                 self.c_input.set_shape([len(config.encoder_lstm_layers), None, config.lstm_units])
+                drop_out_prob = Input_manager.drop_out
 
             with tf.name_scope("Now_Target"):
                 self.labels = Input_manager.labels[device_j, :, :]
@@ -135,12 +136,16 @@ class activity_network:
 
             with tf.name_scope("Dimension_Encoder"):
                 dense1_cd = tf.layers.dense(self.c3d_out, config.enc_fc_1)
+                dense1_cd = tf.nn.dropout(dense1_cd, drop_out_prob)
                 dense2_cd = tf.layers.dense(dense1_cd, config.enc_fc_2)
+                dense2_cd = tf.nn.dropout(dense2_cd, drop_out_prob)
                 self.out_pL = tf.layers.dense(dense2_cd, config.lstm_units)
 
             with tf.name_scope("Dimension_Decoder"):
                 dense1_cd = tf.layers.dense(self.out_pL, config.enc_fc_2)
+                dense1_cd = tf.nn.dropout(dense1_cd, drop_out_prob)
                 dense2_cd = tf.layers.dense(dense1_cd, config.enc_fc_1)
+                dense2_cd = tf.nn.dropout(dense2_cd, drop_out_prob)
                 self.autoenc_out = tf.layers.dense(dense2_cd, self.c3d_out.shape[-1])
 
             with tf.name_scope("Lstm_encoder"):
@@ -215,10 +220,15 @@ class activity_network:
                 C_composedVec = tf.concat([encoder_state.c, flat_now], 1)
                 H_composedVec = tf.concat([encoder_state.h, flat_now], 1)
                 new_C = tf.layers.dense(C_composedVec, config.lstm_units)
+                new_C = tf.nn.dropout(new_C, drop_out_prob)
                 new_H = tf.layers.dense(H_composedVec, config.lstm_units)
+                new_H = tf.nn.dropout(new_H, drop_out_prob)
                 H_composedVec = tf.concat([new_C, new_H], 1)
 
-                # next_dense_1 = tf.layers.dense(H_composedVec, config.pre_class)
+                next_dense_1 = tf.layers.dense(H_composedVec, config.pre_class)
+                next_dense_1 = tf.nn.dropout(next_dense_1, drop_out_prob)
+                next_dense_2 = tf.layers.dense(next_dense_1, config.pre_class)
+                next_dense_2 = tf.nn.dropout(next_dense_2, drop_out_prob)
                 self.next_logit = tf.layers.dense(H_composedVec, self.number_of_classes)
                 self.next_softmax = tf.nn.softmax(self.next_logit, name='softmax_out')
                 self.next_predictions = tf.argmax(input=self.next_softmax, axis=1, name="c3d_prediction")
@@ -229,7 +239,9 @@ class activity_network:
                 help_C_composedVec = tf.concat([C_composedVec, self.next_softmax], 1)
                 help_H_composedVec = tf.concat([H_composedVec, self.next_softmax], 1)
                 help_C = tf.layers.dense(help_C_composedVec, config.lstm_units)
+                help_C = tf.nn.dropout(help_C, drop_out_prob)
                 help_H = tf.layers.dense(help_H_composedVec, config.lstm_units)
+                help_H = tf.nn.dropout(help_H, drop_out_prob)
                 help_state = tf.contrib.rnn.LSTMStateTuple(help_C, help_H)
             
             with tf.name_scope('Help_Decoder_inference'):
@@ -246,8 +258,10 @@ class activity_network:
             
             def c3d_classifier_dense(x):
                 with tf.variable_scope("c3d_classifier_dense", reuse=tf.AUTO_REUSE):
-                    # out_cd = tf.layers.dense(x, config.pre_class, name="c3d_dense_1")
-                    # out_cd_2 = tf.layers.dense(out_cd, config.pre_class, name="c3d_dense_2")
+                    out_cd = tf.layers.dense(x, config.pre_class, name="c3d_dense_1")
+                    out_cd = tf.nn.dropout(out_cd, drop_out_prob)
+                    out_cd_2 = tf.layers.dense(out_cd, config.pre_class, name="c3d_dense_2")
+                    out_cd_2 = tf.nn.dropout(out_cd_2, drop_out_prob)
                     logit = tf.layers.dense(x, self.number_of_classes, name="c3d_dense_3")
                 return logit
 
@@ -255,7 +269,6 @@ class activity_network:
                 reshaped_c3d_out = tf.reshape(self.c3d_out, [-1,self.c3d_out.shape[-1]])
                 dense_out = c3d_classifier_dense(reshaped_c3d_out)
                 self.logit_c3d = tf.reshape(dense_out, [-1,self.c3d_out.shape[-2],dense_out.shape[-1]])
-                # self.logit_c3d = tf.map_fn(lambda x: c3d_classifier_dense(x), self.c3d_out)
                 self.softmax_c3d = tf.nn.softmax(self.logit_c3d)
                 self.predictions_c3d = tf.argmax(input=self.softmax_c3d, axis=2, name="c3d_prediction")
                 self.c3d_one_hot_prediction= tf.one_hot(self.predictions_c3d, depth = self.softmax_c3d.shape[-1])

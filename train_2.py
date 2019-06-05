@@ -173,6 +173,7 @@ def train():
                                                                                                                                                     Train_Net.c_out_list, Train_Net.h_out_list],
                                                                                                                                                     feed_dict={Input_net.input_batch: batch['X'],
                                                                                                                                                                 Input_net.labels: batch['Y'],
+                                                                                                                                                                Input_net.drop_out_prob: 1.0,
                                                                                                                                                                 Input_net.help_labels: batch['help_Y'],
                                                                                                                                                                 Input_net.c_input: batch['c'],
                                                                                                                                                                 Input_net.h_input: batch['h'],
