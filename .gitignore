@@ -29,3 +29,7 @@ dataset/labels_user12.json
 dataset/labels_user21.json
 dataset/labels_user22.json
 Help-System/
+
+dataset/results
+logdir-v2-smallc3d/
+checkpoint-good?
