@@ -63,7 +63,7 @@ class IO_manager:
         if not config.use_prep:
             ready_batch = self.add_pose(ready_batch, self.sess, augment)
         else:
-            ready_batch = self.augment(X, self.sess):
+            ready_batch = self.augment(X, self.sess)
 
         # ready_batch = self.group_batches(ready_batch, Devices, pbar)
         pbar.close()
