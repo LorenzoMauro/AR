@@ -169,7 +169,7 @@ class Annotation:
                     cut_name = path.split('/')[-1]
                     cut_name = cut_name.split('cam')[0]
                     obj = {}
-                    if cut_name in self.object_label 
+                    if cut_name in self.object_label:
                         if frame in self.object_label[cut_name]:
                             obj_list = self.object_label[cut_name][frame]['object_list']
                             prob_list = self.object_label[cut_name][frame]['scores']
