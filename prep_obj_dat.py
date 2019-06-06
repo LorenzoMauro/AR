@@ -25,7 +25,7 @@ for root, dirs, files in os.walk('dataset/object_label'):
 new_collection_video_name = {}
 for folder in obj_dataset:
     name = folder_to_name[folder]
-    cut_video_name = name.split('cam')[1]
+    cut_video_name = name.split('cam')[0]
     new_collection_video_name[cut_video_name] = obj_dataset[folder]
 
 ordered_collection = load('ordered_collection')
@@ -33,7 +33,7 @@ ordered_collection = load('ordered_collection')
 new_collection = {}
 for path in ordered_collection:
     full_video_name = path.split('/')[-1]
-    cut_video_name = full_video_name.split('cam')[1]
+    cut_video_name = full_video_name.split('cam')[0]
     new_collection[cut_video_name] = new_collection_video_name[cut_video_name]
 
 pp.pprint(new_collection)
