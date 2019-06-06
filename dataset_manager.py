@@ -393,6 +393,7 @@ class Dataset:
         cut_name = path.split('/')[-1]
         cut_name = cut_name.split('cam')[0]
         frame = int((frame_list[0]+frame_list[1])/2)
+        print(self.object_label[cut_name])
         obj_list = self.object_label[cut_name][frame]
         return obj_list
 
