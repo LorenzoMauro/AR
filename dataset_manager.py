@@ -59,6 +59,7 @@ class Dataset:
         self.id_to_label =  annotation.id_to_label
         self.frame_label =  annotation.frames_label
         self.object_label = annotation.object_label
+        self.obj_id_2_label = annotation.obj_id_2_label
         self.word_to_id, self.id_to_word = self.create_labels_mappings_network(self.label_to_id)
         self.number_of_classes = len(self.word_to_id)
         self.save(self.label_to_id, 'label_to_id')
@@ -393,12 +394,15 @@ class Dataset:
         cut_name = path.split('/')[-1]
         cut_name = cut_name.split('cam')[0]
         frame = str(int((frame_list[0]+frame_list[-1])/2))
+        out = {}
         if cut_name in self.object_label:
             obj_list = self.object_label[cut_name][frame]
-        else:
-            obj_list = {}
-            print(cut_name)
-        return obj_list
+            for idx in range(obj_list['object_list'])
+                obj_id = obj_list['object_list'][idx]
+                obj_prob = obj_list['scores'][idx]
+                obj_word = self.obj_id_2_label[obj_id]
+                out[obj_word] = obj_prob
+        return out
 
     def save(self, obj, name):
         with open('dataset/' + name + '.pkl', 'wb') as f:
