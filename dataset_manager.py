@@ -185,7 +185,7 @@ class Dataset:
         id_to_word[1] = 'go'
         word_to_id['end'] = 2
         id_to_word[2] = 'end'
-        obj_list = {'guard', 'cloth', 'torch', 'spray_bottle', 'table', 'pliers', 'screwdriver', 'brush', 'cutter', 'robot', 'ladder'}
+        obj_list = {'guard', 'cloth', 'torch', 'spray_bottle', 'table', 'pliers', 'screwdriver', 'brush', 'cutter', 'robot', 'ladder','closed_ladder','person'}
         i = 3
         for label in label_to_id.keys():
             label = label.split(' ')
