@@ -34,9 +34,10 @@ new_collection = {}
 for path in ordered_collection:
     full_video_name = path.split('/')[-1]
     cut_video_name = full_video_name.split('cam')[0]
-    new_collection[cut_video_name] = new_collection_video_name[cut_video_name]
-
-pp.pprint(new_collection)
+    if cut_video_name not in new_collection_video_name:
+        print(cut_video_name)
+    else:
+        new_collection[cut_video_name] = new_collection_video_name[cut_video_name]
 
 with open(config.kit_obj_annotation, 'w') as outfile:
     json.dump(new_collection, outfile)
