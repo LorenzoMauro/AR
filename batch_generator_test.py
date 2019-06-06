@@ -120,15 +120,15 @@ class IO_manager:
                         one_input, frame_list = self.extract_one_input(path, segment, pbar)
                     config.snow_ball_step_count += 1
 
-                    obj_input = entry['obj_label']
+                    obj_label = entry['obj_label']
                     
                     batch[d, j, s, :, :, :, :] = one_input
                     labels[d, j, s] = current_label
                     now_weight[d, j, s] = self.dataset.now_weigth[current_label]
 
-                    for obj in obj_input.keys():
+                    for obj in obj_label.keys():
                         position = self.dataset.word_to_id[obj]
-                        value = obj_input[obj]
+                        value = obj_label[obj]
                         obj_input[d, j, s, position] = value
 
 
