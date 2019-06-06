@@ -30,7 +30,7 @@ for root, dirs, files in os.walk('dataset/object_label'):
             new_dat = {}
             val = Dataset[list(Dataset.keys())[0]]
             new_dat[fl.split('cam')[0]] = val
-            obj_dataset.update(Dataset)
+            obj_dataset.update(new_dat)
             print(len(obj_dataset))
 
 new_collection_video_name = {}
