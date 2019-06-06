@@ -34,7 +34,7 @@ for path in ordered_collection:
     new_collection[path] = 
             
 
-with open(config.kit_activity_annotation_join, 'w') as outfile:
-    json.dump(help_dataset, outfile)
+with open(config.kit_obj_annotation, 'w') as outfile:
+    json.dump(new_collection, outfile)
 
 # pp.pprint(help_dataset)
