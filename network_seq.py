@@ -218,19 +218,28 @@ class activity_network:
                 C_composedVec = tf.concat([encoder_state.c, flat_now, flat_obj], 1)
                 H_composedVec = tf.concat([encoder_state.h, flat_now, flat_obj], 1)
 
-            with tf.name_scope('Recompute_state_for_next'):
-                new_C = tf.layers.dense(C_composedVec, config.lstm_units, activation='tanh')
-                # new_C = tf.nn.dropout(new_C, drop_out_prob)
-                new_H = tf.layers.dense(H_composedVec, config.lstm_units, activation='tanh')
-                # new_H = tf.nn.dropout(new_H, drop_out_prob)
-                H_composedVec = tf.concat([new_C, new_H], 1)
+            # with tf.name_scope('Recompute_state_for_next'):
+            #     new_C = tf.layers.dense(C_composedVec, config.lstm_units, activation='tanh')
+            #     # new_C = tf.nn.dropout(new_C, drop_out_prob)
+            #     new_H = tf.layers.dense(H_composedVec, config.lstm_units, activation='tanh')
+            #     # new_H = tf.nn.dropout(new_H, drop_out_prob)
+            #     H_composedVec = tf.concat([new_C, new_H], 1)
 
             with tf.name_scope('Next_classifier'):
+                flat_now = tf.contrib.layers.flatten(self.inference_softmax[:,:-1,:])
+                flat_obj = tf.contrib.layers.flatten(self.obj_input)
+                flat_input = tf.concat([flat_now, flat_obj], 1)
+                next_input = tf.layers.dense(flat_input, config.lstm_units, activation='tanh')
+                next_input = tf.reshape(next_input, [-1, 1, config.lstm_units])
+                next_decoder_cell = tf.contrib.rnn.LSTMCell(config.lstm_units)
+                _, next_out_state = tf.nn.dynamic_rnn(next_decoder_cell, next_input,
+                                                                    initial_state=encoder_state,
+                                                                    dtype=tf.float32)
                 # next_dense_1 = tf.layers.dense(H_composedVec, config.pre_class, activation='tanh')
                 # next_dense_1 = tf.nn.dropout(next_dense_1, drop_out_prob)
                 # next_dense_2 = tf.layers.dense(next_dense_1, config.pre_class, activation='tanh')
                 # next_dense_2 = tf.nn.dropout(next_dense_2, drop_out_prob)
-                self.next_logit = tf.layers.dense(H_composedVec, self.number_of_classes, activation='tanh')
+                self.next_logit = tf.layers.dense(next_out_state.c, self.number_of_classes, activation='tanh')
                 self.next_softmax = tf.nn.softmax(self.next_logit, name='softmax_out')
                 self.next_predictions = tf.argmax(input=self.next_softmax, axis=1, name="c3d_prediction")
                 self.next_one_hot_prediction= tf.one_hot(self.next_predictions, depth = self.next_softmax.shape[-1])
@@ -266,7 +275,7 @@ class activity_network:
 
             with tf.name_scope('c3d_classifier'):
                 reshaped_c3d_out = tf.reshape(self.out_pL, [-1, self.out_pL.shape[-1]])
-                dense_out = tf.layers.dense(reshaped_c3d_out, self.number_of_classes, name="c3d_dense_3", activation='tanh')
+                dense_out = tf.layers.dense(reshaped_c3d_out, self.number_of_classes, name="c3d_dense_3")
                 # dense_out = c3d_classifier_dense(reshaped_c3d_out)
                 self.logit_c3d = tf.reshape(dense_out, [-1,self.out_pL.shape[-2],dense_out.shape[-1]])
                 self.softmax_c3d = tf.nn.softmax(self.logit_c3d)
