@@ -396,7 +396,7 @@ class Dataset:
         frame = str(int((frame_list[0]+frame_list[-1])/2))
         out = {}
         if cut_name in self.object_label:
-            obj_list = self.object_label[cut_name][frame]
+            obj_list = self.object_label[cut_name][frame][0]
             for idx in range(len(obj_list['object_list'])):
                 obj_id = obj_list['object_list'][idx]
                 obj_prob = obj_list['scores'][idx]
