@@ -4,7 +4,7 @@ import os
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
-def load(self, name):
+def load(name):
     with open('dataset/' + name + '.pkl', 'rb') as f:
         return pickle.load(f)
 
