@@ -152,7 +152,7 @@ class activity_network:
             with tf.name_scope('insert_obj_for_encoder'):
                 encoder_input = self.out_pL
                 concateneted_encoder_vector = tf.concat([self.out_pL, self.obj_input], -1)
-                encoder_input = tf.layers.dense(reshaped_input, config.lstm_units)
+                encoder_input = tf.layers.dense(concateneted_encoder_vector, config.lstm_units)
 
             with tf.name_scope("Lstm_encoder"):
                 encoder_cells = [tf.contrib.rnn.LSTMCell(config.lstm_units) for n in config.encoder_lstm_layers]

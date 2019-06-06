@@ -14,7 +14,7 @@ load_c3d = False
 model_filename = './checkpoint/Net_weigths.model'
 deploy_folder = './Help-System/model/activity_network_model'
 deploy_folder = './Help-System/model/activity_network_model.ckpt'
-tot_steps = 1000000
+tot_steps = 2000000
 processes = 20
 tasks = 40
 val_task = 40
@@ -60,7 +60,7 @@ validation_fraction = 0.15
 split_seconds = True
 
 #[Annotation]
-rebuild = True
+rebuild = False
 limit_classes = True
 use_prep = True
 classes_to_use = ['milk', 'coffee'] # ['friedegg', 'cereals', 'milk']
@@ -86,4 +86,4 @@ base_mult = Batch_size*4
 reset_confusion_step = base_mult*int(22000/base_mult)
 update_confusion = base_mult*int(10000/base_mult)
 val_step = base_mult*int(6000/base_mult)
-no_sil_step = 0
+no_sil_step = 100000
