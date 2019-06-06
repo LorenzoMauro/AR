@@ -9,11 +9,9 @@ def load(name):
     with open('dataset/' + name + '.pkl', 'rb') as f:
         return pickle.load(f)
 
-help_dataset = {}
+obj_dataset = {}
 for root, dirs, files in os.walk('dataset/object_label'):
-    print(root)
     for fl in files:
-        print(fl)
         if fl.split('.')[1] == 'json' and 'trial' in fl.split('.')[0]:
             path = root +  '/' + fl
             print(path)
@@ -21,8 +19,6 @@ for root, dirs, files in os.walk('dataset/object_label'):
             Dataset = json.loads(json_data)
             obj_dataset.update(Dataset)
             print(len(obj_dataset))
-
-print(obj_dataset)
 
 ordered_collection = load('ordered_collection')
 new_collection = {}
