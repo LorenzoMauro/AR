@@ -12,6 +12,7 @@ def load(name):
 help_dataset = {}
 for root, dirs, files in os.walk('dataset/object_label/'):
     for fl in files:
+        print(fl)
         if fl.split('.')[1] == 'json' and 'trial' in fl.split('.')[0]:
             path = root +  '/' + fl
             print(path)
