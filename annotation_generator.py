@@ -174,7 +174,7 @@ class Annotation:
                             obj_list = self.object_label[cut_name][frame]['object_list']
                             prob_list = self.object_label[cut_name][frame]['scores']
                             for indx in range(len(obj_list)):
-                                obj[self.obj_id_2_label[obj_list[indx]] = prob_list[indx]
+                                obj[self.obj_id_2_label[obj_list[indx]]] = prob_list[indx]
                     else:
                         obj = {}
                     
