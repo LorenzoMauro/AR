@@ -17,7 +17,7 @@ class Input_manager:
                 self.input_batch = tf.placeholder(tf.uint8, shape=(None, None, config.seq_len, config.frames_per_step, config.out_H, config.out_W, config.input_channels), name="Input")
                 self.h_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), None, config.lstm_units), name="h_input")
                 self.c_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), None, config.lstm_units), name="c_input")
-                self.obj_input = tf.placeholder(tf.int32, shape=(None, None, config.seq_len, len(IO_tool.dataset.word_to_id)), name="now_label")
+                self.obj_input = tf.placeholder(tf.float32, shape=(None, None, config.seq_len, len(IO_tool.dataset.word_to_id)), name="now_label")
                 self.c_output = self.c_input
                 self.h_output = self.h_input
                 self.drop_out_prob = tf.placeholder_with_default(config.plh_dropout, shape=())
