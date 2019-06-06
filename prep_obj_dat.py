@@ -10,7 +10,8 @@ def load(name):
         return pickle.load(f)
 
 help_dataset = {}
-for root, dirs, files in os.walk('dataset/object_label/'):
+for root, dirs, files in os.walk('dataset/object_label'):
+    print(root)
     for fl in files:
         print(fl)
         if fl.split('.')[1] == 'json' and 'trial' in fl.split('.')[0]:
