@@ -17,7 +17,7 @@ class Annotation:
         self.dataset, self.frames_label, self.label_to_id, self.id_to_label = self.create_ocado_annotation(activity_dataset, help_dataset)
 
         self.obj_id_2_label = { 0: 'BG',
-                                1: 'spraybottle',
+                                1: 'spray_bottle',
                                 2: 'screwdriver',
                                 3: 'torch',
                                 4: 'cloth',
