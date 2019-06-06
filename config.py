@@ -65,6 +65,7 @@ limit_classes = True
 use_prep = True
 classes_to_use = ['milk', 'coffee'] # ['friedegg', 'cereals', 'milk']
 ocado_annotation = 'dataset/ocado.json'
+kit_obj_annotation = 'dataset/kit_obj.json'
 kit_activity_annotation = 'dataset/kit_activity.json'
 kit_help_annotation_temp = 'dataset/kit_help_temp.json'
 kit_help_annotation = 'dataset/kit_help.json'
