@@ -204,15 +204,18 @@ class Annotation:
                     while find_next and next_frame < tot_frames:
                         proposed_next_label = frames_label[next_frame]['now']
                         next_frame += + 1
+                        # if proposed_next_label != current_label and proposed_next_label != label_to_id['sil']:
+                        #     if proposed_next_label != label_to_id['giveobj'] and proposed_next_label != label_to_id['requestobj']:
+                        #         next_action = proposed_next_label
+                        #         find_next = False
+                        #     else:
+                        #         next_maybe = proposed_next_label
+                        #     if next_maybe != proposed_next_label:
+                        #         next_action = proposed_next_label
+                        #         find_next = False
                         if proposed_next_label != current_label and proposed_next_label != label_to_id['sil']:
-                            if proposed_next_label != label_to_id['giveobj'] and proposed_next_label != label_to_id['requestobj']:
-                                next_action = proposed_next_label
-                                find_next = False
-                            else:
-                                next_maybe = proposed_next_label
-                            if next_maybe != proposed_next_label:
-                                next_action = proposed_next_label
-                                find_next = False
+                            next_action = proposed_next_label
+                            find_next = False
                     frames_label[frame]['next'] = next_action
                 path = path.replace('\\','/')
                 collection[path] = {}

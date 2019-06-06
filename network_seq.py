@@ -226,11 +226,11 @@ class activity_network:
                 H_composedVec = tf.concat([new_C, new_H], 1)
 
             with tf.name_scope('Next_classifier'):
-                next_dense_1 = tf.layers.dense(H_composedVec, config.pre_class, activation='tanh')
-                next_dense_1 = tf.nn.dropout(next_dense_1, drop_out_prob)
-                next_dense_2 = tf.layers.dense(next_dense_1, config.pre_class, activation='tanh')
-                next_dense_2 = tf.nn.dropout(next_dense_2, drop_out_prob)
-                self.next_logit = tf.layers.dense(next_dense_2, self.number_of_classes, activation='tanh')
+                # next_dense_1 = tf.layers.dense(H_composedVec, config.pre_class, activation='tanh')
+                # next_dense_1 = tf.nn.dropout(next_dense_1, drop_out_prob)
+                # next_dense_2 = tf.layers.dense(next_dense_1, config.pre_class, activation='tanh')
+                # next_dense_2 = tf.nn.dropout(next_dense_2, drop_out_prob)
+                self.next_logit = tf.layers.dense(H_composedVec, self.number_of_classes, activation='tanh')
                 self.next_softmax = tf.nn.softmax(self.next_logit, name='softmax_out')
                 self.next_predictions = tf.argmax(input=self.next_softmax, axis=1, name="c3d_prediction")
                 self.next_one_hot_prediction= tf.one_hot(self.next_predictions, depth = self.next_softmax.shape[-1])
@@ -265,9 +265,10 @@ class activity_network:
                 return logit
 
             with tf.name_scope('c3d_classifier'):
-                reshaped_c3d_out = tf.reshape(self.c3d_out, [-1,self.c3d_out.shape[-1]])
-                dense_out = c3d_classifier_dense(reshaped_c3d_out)
-                self.logit_c3d = tf.reshape(dense_out, [-1,self.c3d_out.shape[-2],dense_out.shape[-1]])
+                reshaped_c3d_out = tf.reshape(self.out_pL, [-1, self.out_pL.shape[-1]])
+                dense_out = tf.layers.dense(reshaped_c3d_out, self.number_of_classes, name="c3d_dense_3", activation='tanh')
+                # dense_out = c3d_classifier_dense(reshaped_c3d_out)
+                self.logit_c3d = tf.reshape(dense_out, [-1,self.out_pL.shape[-2],dense_out.shape[-1]])
                 self.softmax_c3d = tf.nn.softmax(self.logit_c3d)
                 self.predictions_c3d = tf.argmax(input=self.softmax_c3d, axis=2, name="c3d_prediction")
                 self.c3d_one_hot_prediction= tf.one_hot(self.predictions_c3d, depth = self.softmax_c3d.shape[-1])
