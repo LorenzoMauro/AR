@@ -20,6 +20,8 @@ for root, dirs, files in os.walk('dataset/object_label/'):
             obj_dataset.update(Dataset)
             print(len(obj_dataset))
 
+print(obj_dataset)
+
 ordered_collection = load('ordered_collection')
 new_collection = {}
 for path in ordered_collection:
