@@ -180,7 +180,7 @@ class Annotation:
                     
                     frame_in_msec = (frame / float(fps)) * 1000
                     label = 'sil'
-                    labels = {'now': label_to_id[label], 'next': label_to_id[label], 'help': label_to_id[label], 'obj' = obj}
+                    labels = {'now': label_to_id[label], 'next': label_to_id[label], 'help': label_to_id[label], 'obj' : obj}
                     for annotation in activity_dataset[entry]:
                         segment = annotation['milliseconds']
                         if frame_in_msec <= segment[1] and frame_in_msec >= segment[0]:
