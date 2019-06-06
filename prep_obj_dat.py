@@ -29,9 +29,9 @@ for path in ordered_collection:
         for new_path in ordered_collection:
             new_video_name = new_path.split('/')[-1]
             if cut_video_name in new_video_name and full_video_name != new_video_name:
-                Correct_Trial_name = new_path.split('/')[-2]
+                Trial_name = new_path.split('/')[-2]
         print(full_video_name, new_path, Correct_Trial_name)
-    new_collection[path] = 
+    new_collection[path] = obj_dataset[Trial_name]
             
 
 with open(config.kit_obj_annotation, 'w') as outfile:
