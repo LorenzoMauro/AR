@@ -58,10 +58,15 @@ def train():
             variables = tf.contrib.slim.get_variables_to_restore()
             pp.pprint(vars_in_checkpoint)
             pp.pprint(variables)
-            var_rest = []
+            ckpt_var_name = []
+            ckpt_var_shape = {}
             for el in vars_in_checkpoint:
-                var_rest.append(el[0])
-            var_list = [v for v in variables if v.name.split(':')[0] in var_rest]
+                ckpt_var_name.append(el[0])
+                ckpt_var_shape[el[0]] = el[1]
+            var_list = [v for v in variables if v.name.split(':')[0] in ckpt_var_name]
+            var_list = [v for v in var_list if list(v.shape) == ckpt_var_shape[v.name.split(':')[0]]]
+
+            print(var_list)
             loader = tf.train.Saver(var_list=var_list)
             loader.restore(sess, ckpts)
         elif config.load_c3d:
