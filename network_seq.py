@@ -149,7 +149,7 @@ class activity_network:
                 dense2_cd = tf.nn.dropout(dense2_cd, drop_out_prob)
                 self.autoenc_out = tf.layers.dense(dense2_cd, self.c3d_out.shape[-1])
 
-            with tf.name_scope('insert_obj_for_encoder')
+            with tf.name_scope('insert_obj_for_encoder'):
                 encoder_input = self.out_pL
                 concateneted_encoder_vector = tf.concat([self.out_pL, self.obj_input], -1)
                 encoder_input = tf.layers.dense(reshaped_input, config.lstm_units)
