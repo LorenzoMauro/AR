@@ -32,7 +32,7 @@ for path in ordered_collection:
             new_video_name = new_path.split('/')[-1]
             if cut_video_name in new_video_name and full_video_name != new_video_name:
                 Trial_name = new_path.split('/')[-2]
-        print(full_video_name, new_path, Correct_Trial_name)
+    print(full_video_name, new_path, Trial_name)
     new_collection[path] = obj_dataset[Trial_name]
             
 
