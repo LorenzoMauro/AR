@@ -13,6 +13,9 @@ class Annotation:
         json_data = open(config.kit_help_annotation).read()
         help_dataset = json.loads(json_data)
         self.dataset, self.frames_label, self.label_to_id, self.id_to_label = self.create_ocado_annotation(activity_dataset, help_dataset)
+        json_data = open(config.object_label).read()
+        self.object_label = json.loads(json_data)
+
         # pp.pprint(self.dataset)
         # pp.pprint(self.frames_label)
         # pp.pprint(self.label_to_id)
