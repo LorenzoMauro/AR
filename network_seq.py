@@ -223,7 +223,7 @@ class activity_network:
                 new_H = tf.nn.dropout(new_H, drop_out_prob)
                 H_composedVec = tf.concat([new_C, new_H], 1)
 
-            with tf.name_scope('Next_classifier')
+            with tf.name_scope('Next_classifier'):
                 next_dense_1 = tf.layers.dense(H_composedVec, config.pre_class, activation='tanh')
                 next_dense_1 = tf.nn.dropout(next_dense_1, drop_out_prob)
                 next_dense_2 = tf.layers.dense(next_dense_1, config.pre_class, activation='tanh')
