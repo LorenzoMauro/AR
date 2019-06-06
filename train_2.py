@@ -88,7 +88,8 @@ def train():
                                                                                                         Input_net.next_labels: batch['next_Y'],
                                                                                                         Train_Net.now_weight: batch['now_weight'],
                                                                                                         Train_Net.next_weight: batch['next_weight'],
-                                                                                                        Train_Net.help_weight: batch['help_weight']})
+                                                                                                        Train_Net.help_weight: batch['help_weight'],
+                                                                                                        Train_Net.help_weight: batch['obj_input']})
 
                 # print(batch['Y'][0,0,...], now_pred[0,...])
                 # print(batch['Y'][0,0,...], c3d_pred[0,...])
@@ -180,7 +181,8 @@ def train():
                                                                                                                                                                 Input_net.next_labels: batch['next_Y'],
                                                                                                                                                                 Train_Net.now_weight: batch['now_weight'],          
                                                                                                                                                                 Train_Net.next_weight: batch['next_weight'],           
-                                                                                                                                                                Train_Net.help_weight: batch['help_weight']})           
+                                                                                                                                                                Train_Net.help_weight: batch['help_weight'],
+                                                                                                                                                                Train_Net.help_weight: batch['obj_input']})           
 
                             for j in range(len(batch['video_name_collection'])):
                                 for y in range(c_state[0].shape[1]):

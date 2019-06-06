@@ -43,7 +43,7 @@ class IO_manager:
 
     def compute_batch(self, pbar, Devices, Train, augment=True):
         def multiprocess_batch(x):
-            X, Y, c, h, video_name_collection, segment_collection, next_label, help_label, now_weight, next_weight, help_weight= self.batch_generator(pbar, Devices, Train)
+            X, Y, c, h, video_name_collection, segment_collection, next_label, help_label, now_weight, next_weight, help_weight, obj_input= self.batch_generator(pbar, Devices, Train)
             return {'X': X, 'Y': Y, 'c': c, 'h': h,
                     'next_Y': next_label,
                     'help_Y': help_label,
@@ -51,7 +51,8 @@ class IO_manager:
                     'segment_collection': segment_collection,
                     'now_weight': now_weight,
                     'next_weight': next_weight,
-                    'help_weight': help_weight}
+                    'help_weight': help_weight,
+                    'obj_input': obj_input}
 
         pool = mp.Pool(processes=config.processes)
         if not Train:
@@ -87,6 +88,7 @@ class IO_manager:
         now_weight = np.zeros(shape=(Devices, config.Batch_size, config.seq_len + 1), dtype=float)
         next_weight = np.zeros(shape=(Devices, config.Batch_size), dtype=float)
         help_weight = np.zeros(shape=(Devices, config.Batch_size, 4), dtype=float)
+        obj_input = np.zeros(shape=(Devices, config.Batch_size,config.seq_len, len(self.dataset.word_to_id)), dtype=float)
 
         # Selecting correct dataset
         if Train:
@@ -118,10 +120,16 @@ class IO_manager:
                         one_input, frame_list = self.extract_one_input(path, segment, pbar)
                     config.snow_ball_step_count += 1
 
+                    obj_label = entry['obj_label']
                     
                     batch[d, j, s, :, :, :, :] = one_input
                     labels[d, j, s] = current_label
                     now_weight[d, j, s] = self.dataset.now_weigth[current_label]
+
+                    for obj in obj_label.keys():
+                        position = self.dataset.word_to_id[obj]
+                        value = obj_list[obj]
+                        obj_input[d, j, s, position] = value
 
 
                     if s == 0:
@@ -159,7 +167,7 @@ class IO_manager:
         # pp.pprint(history)
         pbar.update(1)
         pbar.refresh()
-        return batch, labels, c, h, batch_video_name_collection, batch_segment_collection, next_labels, help_labels, now_weight, next_weight, help_weight
+        return batch, labels, c, h, batch_video_name_collection, batch_segment_collection, next_labels, help_labels, now_weight, next_weight, help_weight, obj_input
 
     def entry_selector(self, dataset,ordered_collection, is_ordered):
         random.seed(time.time())

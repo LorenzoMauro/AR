@@ -261,6 +261,7 @@ class Dataset:
                 current_label = self.label_calculator(frame_list, path, 'now')
                 next_label = self.label_calculator(frame_list, path, 'next')
                 help_label = self.label_calculator(frame_list, path, 'help')
+                obj_label = self.object_return(frame_list, path):
                 # if current_label == 0:
                     # continue
                 if len(label_history) == 0:
@@ -306,7 +307,7 @@ class Dataset:
 
                 entry = {'now_label' : current_label, 'next_label' : next_label, 'all_next_label' : couple,
                          'path': path, 'segment':segment, 'history':label_history, 'time_step': step,
-                         'help': help_label, 'step_history': step_history}
+                         'help': help_label, 'step_history': step_history, 'obj_label': obj_label}
                 if path not in ordered_collection:
                     ordered_collection[path] = {}
                 ordered_collection[path][step] = entry
@@ -386,6 +387,13 @@ class Dataset:
             final_label = 0
             pass
         return final_label
+
+    def object_return(self, frame_list, path):
+        cut_name = path.split('/')[-1]
+        cut_name = cut_name.split('cam')[0]
+        frame = int((frame_list[0]+frame_list[1])/2)
+        obj_list = annotation.object_label[cut_name][frame]
+        return obj_list
 
     def save(self, obj, name):
         with open('dataset/' + name + '.pkl', 'wb') as f:
