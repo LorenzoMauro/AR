@@ -261,7 +261,7 @@ class Dataset:
                 current_label = self.label_calculator(frame_list, path, 'now')
                 next_label = self.label_calculator(frame_list, path, 'next')
                 help_label = self.label_calculator(frame_list, path, 'help')
-                obj_label = self.object_return(frame_list, path):
+                obj_label = self.object_return(frame_list, path)
                 # if current_label == 0:
                     # continue
                 if len(label_history) == 0:
