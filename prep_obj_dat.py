@@ -24,8 +24,9 @@ ordered_collection = load('ordered_collection')
 new_collection = {}
 for path in ordered_collection:
     Trial_name = path.split('/')[-2]
+    print(path)
     if 'Trial' not in Trial_name:
-        full_video_name = path.split('/')[-1].split('cam')[1]
+        full_video_name = path.split('/')[-1]
         cut_video_name = full_video_name.split('cam')[1]
         for new_path in ordered_collection:
             new_video_name = new_path.split('/')[-1]
