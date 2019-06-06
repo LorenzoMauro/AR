@@ -28,7 +28,7 @@ for root, dirs, files in os.walk('dataset/object_label'):
             json_data = open(path).read()
             Dataset = json.loads(json_data)
             new_dat = {}
-            val = Dataset[Dataset.keys()[0]]
+            val = Dataset[list(Dataset.keys())[0]]
             new_dat[fl.split('cam')[0]] = val
             obj_dataset.update(Dataset)
             print(len(obj_dataset))
