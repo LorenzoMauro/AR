@@ -21,7 +21,7 @@ class Input_manager:
                 self.c_output = self.c_input
                 self.h_output = self.h_input
                 self.drop_out_prob = tf.placeholder_with_default(1.0, shape=())
-            with tf.name_scope('Object_Input')
+            with tf.name_scope('Object_Input'):
                 self.obj_input = tf.placeholder(tf.float32, shape=(None, None, config.seq_len, len(IO_tool.dataset.word_to_id)), name="obj_input")
             with tf.name_scope("Target"):
                 self.labels = tf.placeholder(tf.int32, shape=(None, None, config.seq_len + 1), name="now_label")
