@@ -32,7 +32,7 @@ for folder in obj_dataset:
     else:
         new_collection_video_name[folder] = obj_dataset[folder]
 
-pp.print(new_collection_video_name.keys())
+pp.pprint(new_collection_video_name.keys())
 
 # ordered_collection = load('ordered_collection')
 
