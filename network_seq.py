@@ -20,7 +20,9 @@ class Input_manager:
                 self.obj_input = tf.placeholder(tf.float32, shape=(None, None, config.seq_len, len(IO_tool.dataset.word_to_id)), name="obj_input")
                 self.c_output = self.c_input
                 self.h_output = self.h_input
-                self.drop_out_prob = tf.placeholder_with_default(config.plh_dropout, shape=())
+                self.drop_out_prob = tf.placeholder_with_default(1.0, shape=())
+            with tf.name_scope('Object_Input')
+                self.obj_input = tf.placeholder(tf.float32, shape=(None, None, config.seq_len, len(IO_tool.dataset.word_to_id)), name="obj_input")
             with tf.name_scope("Target"):
                 self.labels = tf.placeholder(tf.int32, shape=(None, None, config.seq_len + 1), name="now_label")
                 self.help_labels = tf.placeholder(tf.int32, shape=(None, None, 4), name="help_label")
@@ -144,9 +146,9 @@ class activity_network:
 
             with tf.name_scope("Dimension_Decoder"):
                 dense1_cd = tf.layers.dense(self.out_pL, config.enc_fc_2)
-                dense1_cd = tf.nn.dropout(dense1_cd, drop_out_prob)
+                # dense1_cd = tf.nn.dropout(dense1_cd, drop_out_prob)
                 dense2_cd = tf.layers.dense(dense1_cd, config.enc_fc_1)
-                dense2_cd = tf.nn.dropout(dense2_cd, drop_out_prob)
+                # dense2_cd = tf.nn.dropout(dense2_cd, drop_out_prob)
                 self.autoenc_out = tf.layers.dense(dense2_cd, self.c3d_out.shape[-1])
 
             with tf.name_scope('insert_obj_for_encoder'):
@@ -218,9 +220,9 @@ class activity_network:
 
             with tf.name_scope('Recompute_state_for_next'):
                 new_C = tf.layers.dense(C_composedVec, config.lstm_units, activation='tanh')
-                new_C = tf.nn.dropout(new_C, drop_out_prob)
+                # new_C = tf.nn.dropout(new_C, drop_out_prob)
                 new_H = tf.layers.dense(H_composedVec, config.lstm_units, activation='tanh')
-                new_H = tf.nn.dropout(new_H, drop_out_prob)
+                # new_H = tf.nn.dropout(new_H, drop_out_prob)
                 H_composedVec = tf.concat([new_C, new_H], 1)
 
             with tf.name_scope('Next_classifier'):
@@ -237,9 +239,9 @@ class activity_network:
                 help_C_composedVec = tf.concat([C_composedVec, self.next_softmax], 1)
                 help_H_composedVec = tf.concat([H_composedVec, self.next_softmax], 1)
                 help_C = tf.layers.dense(help_C_composedVec, config.lstm_units, activation='tanh')
-                help_C = tf.nn.dropout(help_C, drop_out_prob)
+                # help_C = tf.nn.dropout(help_C, drop_out_prob)
                 help_H = tf.layers.dense(help_H_composedVec, config.lstm_units, activation='tanh')
-                help_H = tf.nn.dropout(help_H, drop_out_prob)
+                # help_H = tf.nn.dropout(help_H, drop_out_prob)
                 help_state = tf.contrib.rnn.LSTMStateTuple(help_C, help_H)
             
             with tf.name_scope('Help_Decoder_block'):
@@ -323,6 +325,7 @@ class Training:
                         predictions_now_conc = Networks[Net].inference_predictions
                         predictions_help_conc = Networks[Net].help_inference_predictions
                         predictions_next_conc = Networks[Net].next_predictions
+                        obj_label_conc = Networks[Net].obj_input
                         z +=1
                     else:
                         c3d_pred_conc = tf.concat([c3d_pred_conc, Networks[Net].c3d_one_hot_prediction], axis=0)
@@ -338,6 +341,7 @@ class Training:
                         predictions_now_conc = tf.concat([predictions_now_conc,Networks[Net].inference_predictions], axis=0)
                         predictions_help_conc = tf.concat([predictions_help_conc,Networks[Net].help_inference_predictions], axis=0)
                         predictions_next_conc = tf.concat([predictions_next_conc,Networks[Net].next_predictions], axis=0)
+                        obj_label_conc = tf.concat([obj_label_conc,Networks[Net].obj_input], axis=0)
 
                 help_action_target = help_label_conc[...,0,:]
                 help_obj_target = help_label_conc[...,1,:]
@@ -471,6 +475,8 @@ class Training:
 
                 with tf.name_scope('C3d'):
                     tf.summary.histogram("c3d_classification", predictions_c3d_conc)
+
+                tf.summary.histogram("obj_histogram", obj_label_conc)
 
                 tf.summary.scalar('auto_enc_loss_sum', auto_enc_loss_sum)
                 self.merged = tf.summary.merge_all()
