@@ -55,10 +55,12 @@ def train():
             print('new model loaded')
             ckpts = tf.train.latest_checkpoint('./checkpoint')
             vars_in_checkpoint = tf.train.list_variables(ckpts)
+            variables = tf.contrib.slim.get_variables_to_restore()
+            pp.pprint(vars_in_checkpoint)
+            pp.pprint(variables)
             var_rest = []
             for el in vars_in_checkpoint:
                 var_rest.append(el[0])
-            variables = tf.contrib.slim.get_variables_to_restore()
             var_list = [v for v in variables if v.name.split(':')[0] in var_rest]
             loader = tf.train.Saver(var_list=var_list)
             loader.restore(sess, ckpts)
