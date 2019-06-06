@@ -133,6 +133,8 @@ class Dataset:
         test_path = []
         while len(test_path) < entry_val + 1:
             new_test_video = random.choice(list(self.ordered_collection.keys()))
+            if 'cam0' in new_test_video:
+                continue
             test_path.append(new_test_video)
             if len(test_path) == entry_val + 1:
                 test_with_robot = [x for x in test_path if 'robot' in x]
