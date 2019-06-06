@@ -35,6 +35,7 @@ class Annotation:
         # pp.pprint(self.frames_label)
         # pp.pprint(self.label_to_id)
         # pp.pprint(self.id_to_label)
+        pp.pprint(self.object_label.keys())
             
     def create_ocado_annotation(self, activity_dataset, help_dataset):
         label_collection = []
