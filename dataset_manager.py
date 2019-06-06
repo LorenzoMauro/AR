@@ -58,6 +58,7 @@ class Dataset:
         self.label_to_id =  annotation.label_to_id
         self.id_to_label =  annotation.id_to_label
         self.frame_label =  annotation.frames_label
+        self.object_label = annotation.object_label
         self.word_to_id, self.id_to_word = self.create_labels_mappings_network(self.label_to_id)
         self.number_of_classes = len(self.word_to_id)
         self.save(self.label_to_id, 'label_to_id')
@@ -392,7 +393,7 @@ class Dataset:
         cut_name = path.split('/')[-1]
         cut_name = cut_name.split('cam')[0]
         frame = int((frame_list[0]+frame_list[1])/2)
-        obj_list = annotation.object_label[cut_name][frame]
+        obj_list = self.object_label[cut_name][frame]
         return obj_list
 
     def save(self, obj, name):
