@@ -15,7 +15,7 @@ json_data = open('dataset/object_label/folder_to_video.json').read()
 folder_to_name = json.loads(json_data)
 for root, dirs, files in os.walk('dataset/object_label'):
     for fl in files:
-        if fl.split('.')[1] == 'json' and ('trial' in fl.split('.')[0] or 'record' in fl.split('.')[0]):
+        if fl.split('.')[-1] == 'json' and ('trial' in fl.split('.')[0] or 'record' in fl.split('.')[0]):
             path = root +  '/' + fl
             print(path)
             json_data = open(path).read()
