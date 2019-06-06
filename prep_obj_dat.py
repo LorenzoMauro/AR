@@ -28,7 +28,7 @@ for path in ordered_collection:
         cut_video_name = full_video_name.split('cam')[1]
         for new_path in ordered_collection:
             new_video_name = new_path.split('/')[-1]
-            if cut_video_name in new_video_name and full_video_name != new_video_name
+            if cut_video_name in new_video_name and full_video_name != new_video_name:
                 Correct_Trial_name = new_path.split('/')[-2]
         print(full_video_name, new_path, Correct_Trial_name)
     new_collection[path] = 
