@@ -56,8 +56,6 @@ def train():
             ckpts = tf.train.latest_checkpoint('./checkpoint')
             vars_in_checkpoint = tf.train.list_variables(ckpts)
             variables = tf.contrib.slim.get_variables_to_restore()
-            pp.pprint(vars_in_checkpoint)
-            pp.pprint(variables)
             ckpt_var_name = []
             ckpt_var_shape = {}
             for el in vars_in_checkpoint:

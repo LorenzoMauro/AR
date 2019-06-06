@@ -126,6 +126,7 @@ class IO_manager:
                     labels[d, j, s] = current_label
                     now_weight[d, j, s] = self.dataset.now_weigth[current_label]
 
+                    print(obj_label)
                     if len(obj_label) != 0:
                         for obj in obj_label.keys():
                             position = self.dataset.word_to_id[obj]
