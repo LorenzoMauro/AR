@@ -395,9 +395,9 @@ class Dataset:
         frame = str(int((frame_list[0]+frame_list[-1])/2))
         if cut_name in self.object_label:
             obj_list = self.object_label[cut_name][frame]
-            else:
-                obj_list = {}
-                print(cut_name)
+        else:
+            obj_list = {}
+            print(cut_name)
         return obj_list
 
     def save(self, obj, name):
