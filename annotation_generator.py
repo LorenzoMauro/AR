@@ -29,7 +29,7 @@ class Annotation:
                                 10: 'ladder',
                                 11: 'closed_ladder',
                                 12: 'person',
-                                13 'table'}
+                                13: 'table'}
 
         # pp.pprint(self.dataset)
         # pp.pprint(self.frames_label)
