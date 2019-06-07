@@ -212,6 +212,7 @@ class activity_network:
                 self.inference_softmax, self.inference_predictions, self.inference_one_hot_prediction = lstm_classifier(self.inference_logit) 
 
             with tf.name_scope('Next_classifier'):
+                self.inference_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
                 flat_now = tf.contrib.layers.flatten(self.inference_softmax[:,:-1,:])
                 flat_obj = tf.contrib.layers.flatten(self.obj_input)
                 flat_input = tf.concat([flat_now, flat_obj], 1)
