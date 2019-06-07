@@ -399,9 +399,9 @@ class Training:
 
                 c3d_loss_sum = sum(c3d_loss_coll)
                 now_loss_sum = sum(now_loss_coll)
-                next_loss_sum = sum(help_loss_coll)
-                auto_enc_loss_sum = sum(next_loss_coll)
-                help_loss_sum = sum(auto_loss_coll)
+                next_loss_sum = sum(next_loss_coll)
+                auto_enc_loss_sum = sum(auto_loss_coll)
+                help_loss_sum = sum(help_loss_coll)
 
                 with tf.name_scope("Global_Loss"):
                     c3d_loss_sum = tf.cast(c3d_loss_sum, tf.float64)
