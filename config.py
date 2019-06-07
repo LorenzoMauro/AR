@@ -5,7 +5,7 @@ allow_growth = True
 
 #[Train]
 c3d_ucf_weights = "sports1m_finetuning_ucf101.model"
-Batch_size = 6
+Batch_size = 8
 frames_per_step = 6
 window_size = 1
 load_previous_weigth = True
@@ -34,10 +34,10 @@ preLstm_dropout = 0.6
 Lstm_dropout = 0.6
 input_channels = 7
 enc_fc_1 = 4000
-enc_fc_2 = 2000
-lstm_units = 1500
-pre_class = 500
-encoder_lstm_layers = 5*[lstm_units]
+enc_fc_2 = 1500
+lstm_units = 800
+pre_class = 400
+encoder_lstm_layers = 2*[lstm_units]
 matrix_attention = False
 decoder_embedding_size = 20
 
