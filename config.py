@@ -37,7 +37,7 @@ enc_fc_1 = 4000
 enc_fc_2 = 2000
 lstm_units = 1500
 pre_class = 500
-encoder_lstm_layers = 3*[lstm_units]
+encoder_lstm_layers = 5*[lstm_units]
 matrix_attention = False
 decoder_embedding_size = 20
 
