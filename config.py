@@ -5,7 +5,7 @@ allow_growth = True
 
 #[Train]
 c3d_ucf_weights = "sports1m_finetuning_ucf101.model"
-Batch_size = 4
+Batch_size = 10
 frames_per_step = 6
 window_size = 1
 load_previous_weigth = True
