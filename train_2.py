@@ -75,6 +75,10 @@ def train():
         whole_saver.save(sess, config.model_filename, global_step=0)
         pbar_whole = tqdm(total=(config.tot_steps), desc='Step')
         confusion_tool = confusion_tool_class(number_of_classes, IO_tool, sess, Train_Net)
+
+        run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+        run_metadata = tf.RunMetadata()
+        
         while step < config.tot_steps:
             ready_batch = 0
             pbar = tqdm(total=(config.tasks * config.Batch_size * config.seq_len * len(available_gpus) * config.frames_per_step + len(available_gpus)*config.tasks - 1), leave=False, desc='Batch Generation')
@@ -83,6 +87,8 @@ def train():
                 summary, t_op, now_pred, next_pred, c3d_pred, help_pred, c_state, h_state = sess.run([Train_Net.merged, Train_Net.train_op,
                                                                                             Train_Net.predictions_now_conc, Train_Net.predictions_next_conc, Train_Net.predictions_c3d_conc, Train_Net.predictions_help_conc,
                                                                                             Train_Net.c_out_list, Train_Net.h_out_list],
+                                                                                            options=run_options,
+                                                                                            run_metadata=run_metadata,
                                                                                             feed_dict={Input_net.input_batch: batch['X'],
                                                                                                         Input_net.drop_out_prob: config.plh_dropout,
                                                                                                         Input_net.labels: batch['Y'],
@@ -129,6 +135,7 @@ def train():
                 # print(np.reshape(help_pred[...,:3], (-1, 1)).shape)
 
                 step = step + config.Batch_size*len(available_gpus)
+                train_writer.add_run_metadata(run_metadata, 'step%d' % step)
                 train_writer.add_summary(summary, step)
                 pbar_whole.update(config.Batch_size*len(available_gpus))
 
