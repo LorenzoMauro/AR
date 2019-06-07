@@ -5,7 +5,7 @@ allow_growth = True
 
 #[Train]
 c3d_ucf_weights = "sports1m_finetuning_ucf101.model"
-Batch_size = 5
+Batch_size = 6
 frames_per_step = 6
 window_size = 1
 load_previous_weigth = True
@@ -26,7 +26,7 @@ balance_key = 'all'
 is_ordered = False
 
 #[Network]
-learning_rate_start = 0.00001
+learning_rate_start = 0.0001
 gradient_clipping_norm = 1.0
 plh_dropout = 0.8
 c3d_dropout = 0.6
