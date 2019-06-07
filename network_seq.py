@@ -211,20 +211,6 @@ class activity_network:
                 self.inference_logit = tf.pad(self.inference_logit, paddings, 'CONSTANT', constant_values = 1)
                 self.inference_softmax, self.inference_predictions, self.inference_one_hot_prediction = lstm_classifier(self.inference_logit) 
 
-            with tf.name_scope('Concat_state_now_obj'):
-                self.inference_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
-                flat_now = tf.contrib.layers.flatten(self.inference_softmax[:,:-1,:])
-                flat_obj = tf.contrib.layers.flatten(self.obj_input)
-                C_composedVec = tf.concat([encoder_state.c, flat_now, flat_obj], 1)
-                H_composedVec = tf.concat([encoder_state.h, flat_now, flat_obj], 1)
-
-            # with tf.name_scope('Recompute_state_for_next'):
-            #     new_C = tf.layers.dense(C_composedVec, config.lstm_units, activation='tanh')
-            #     # new_C = tf.nn.dropout(new_C, drop_out_prob)
-            #     new_H = tf.layers.dense(H_composedVec, config.lstm_units, activation='tanh')
-            #     # new_H = tf.nn.dropout(new_H, drop_out_prob)
-            #     H_composedVec = tf.concat([new_C, new_H], 1)
-
             with tf.name_scope('Next_classifier'):
                 flat_now = tf.contrib.layers.flatten(self.inference_softmax[:,:-1,:])
                 flat_obj = tf.contrib.layers.flatten(self.obj_input)
@@ -235,23 +221,25 @@ class activity_network:
                 _, next_out_state = tf.nn.dynamic_rnn(next_decoder_cell, next_input,
                                                                     initial_state=encoder_state,
                                                                     dtype=tf.float32)
-                # next_dense_1 = tf.layers.dense(H_composedVec, config.pre_class, activation='tanh')
-                # next_dense_1 = tf.nn.dropout(next_dense_1, drop_out_prob)
-                # next_dense_2 = tf.layers.dense(next_dense_1, config.pre_class, activation='tanh')
-                # next_dense_2 = tf.nn.dropout(next_dense_2, drop_out_prob)
                 self.next_logit = tf.layers.dense(next_out_state.c, self.number_of_classes, activation='tanh')
                 self.next_softmax = tf.nn.softmax(self.next_logit, name='softmax_out')
                 self.next_predictions = tf.argmax(input=self.next_softmax, axis=1, name="c3d_prediction")
                 self.next_one_hot_prediction= tf.one_hot(self.next_predictions, depth = self.next_softmax.shape[-1])
 
-            with tf.name_scope('Concat_state_now_obj_next'):
-                help_C_composedVec = tf.concat([C_composedVec, self.next_softmax], 1)
-                help_H_composedVec = tf.concat([H_composedVec, self.next_softmax], 1)
-                help_C = tf.layers.dense(help_C_composedVec, config.lstm_units, activation='tanh')
-                # help_C = tf.nn.dropout(help_C, drop_out_prob)
-                help_H = tf.layers.dense(help_H_composedVec, config.lstm_units, activation='tanh')
-                # help_H = tf.nn.dropout(help_H, drop_out_prob)
-                help_state = tf.contrib.rnn.LSTMStateTuple(help_C, help_H)
+            with tf.name_scope('Help_input_state'):
+                self.inference_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
+                flat_now = tf.contrib.layers.flatten(self.inference_softmax[:,:-1,:])
+                flat_obj = tf.contrib.layers.flatten(self.obj_input)
+
+                c_comp = tf.concat([encoder_state.c, flat_now, self.next_softmax, flat_obj], 1)
+                new_c = tf.layers.dense(c_comp, config.lstm_units, activation='tanh')
+                new_c = tf.layers.dense(new_c, config.lstm_units, activation='tanh')
+
+                h_comp = tf.concat([encoder_state.h, flat_now, self.next_softmax, flat_obj], 1)
+                new_h = tf.layers.dense(h_comp, config.lstm_units, activation='tanh')
+                new_h = tf.layers.dense(new_h, config.lstm_units, activation='tanh')
+
+                help_state = tf.contrib.rnn.LSTMStateTuple(new_c, new_h)
             
             with tf.name_scope('Help_Decoder_block'):
                 help_decoder, help_output_layer = decoder_lstm(config.lstm_units)
