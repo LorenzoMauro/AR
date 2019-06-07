@@ -387,19 +387,19 @@ class Training:
                         with tf.name_scope("Autoencoder_Loss"):
                             auto_enc_loss=tf.reduce_sum(tf.square(Networks[Net].autoenc_out-Networks[Net].c3d_out))
 
-                        if z == 0:
-                            c3d_loss_sum = c3d_loss
-                            now_loss_sum = now_loss
-                            next_loss_sum = next_loss
-                            auto_enc_loss_sum = auto_enc_loss
-                            help_loss_sum = help_loss
-                        else:
-                            c3d_loss_sum += c3d_loss
-                            now_loss_sum += now_loss
-                            next_loss_sum += next_loss
-                            auto_enc_loss_sum += auto_enc_loss
-                            help_loss_sum += help_loss
-                        z += 1
+                    if z == 0:
+                        c3d_loss_sum = c3d_loss
+                        now_loss_sum = now_loss
+                        next_loss_sum = next_loss
+                        auto_enc_loss_sum = auto_enc_loss
+                        help_loss_sum = help_loss
+                    else:
+                        c3d_loss_sum += c3d_loss
+                        now_loss_sum += now_loss
+                        next_loss_sum += next_loss
+                        auto_enc_loss_sum += auto_enc_loss
+                        help_loss_sum += help_loss
+                    z += 1
 
                 with tf.name_scope("Global_Loss"):
                     c3d_loss_sum = tf.cast(c3d_loss_sum, tf.float64)
