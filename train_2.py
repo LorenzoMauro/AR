@@ -33,7 +33,7 @@ def train():
         j=0
         Net_collection = {}
         Input_net = Input_manager(len(available_gpus), IO_tool)
-        for device in available_gpus[0:-1]:
+        for device in available_gpus:
             with tf.device(device.name):
                 print(device.name)
                 with tf.variable_scope('Network') as scope:
@@ -42,8 +42,7 @@ def train():
                     Net_collection['Network_' + str(j)] = activity_network(number_of_classes, Input_net, j, IO_tool)
                     j = j+1
         # with tf.device(available_gpus[-1].name):
-        with tf.device(available_gpus[-1].name):
-            Train_Net = Training(Net_collection, IO_tool)
+        Train_Net = Training(Net_collection, IO_tool)
         IO_tool.start_openPose()
         train_writer = tf.summary.FileWriter("logdir/train", sess.graph)
         val_writer = tf.summary.FileWriter("logdir/val", sess.graph)

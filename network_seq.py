@@ -428,6 +428,7 @@ class Training:
                     learning_rate=learning_rate,
                     optimizer='Adam',
                     clip_gradients=config.gradient_clipping_norm,
+                    colocate_gradients_with_ops=True,
                     variables=Train_variable)
 
             with tf.name_scope('Summary'):
