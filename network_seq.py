@@ -361,8 +361,12 @@ class Training:
                     object_inference_precision, object_inference_recall, object_inference_f1, object_inference_accuracy = self.accuracy_metrics(help_obj_pred, help_obj_target)
                     place_inference_precision, place_inference_recall, place_inference_f1, place_inference_accuracy = self.accuracy_metrics(help_loc_pred, help_loc_target)
             with tf.name_scope('Loss'):
+                c3d_loss_coll = []
+                now_loss_coll = []
+                help_loss_coll = []
+                next_loss_coll = []
+                auto_loss_coll = []
                 for Net in Networks:
-                    z = 0
                     with tf.name_scope(Net):
                         with tf.name_scope("C3d_Loss"):
                             cross_entropy_c3d_vec = tf.nn.softmax_cross_entropy_with_logits_v2(labels=Networks[Net].now_one_hot_label[:,:-1,:], logits=Networks[Net].logit_c3d)
@@ -387,19 +391,17 @@ class Training:
                         with tf.name_scope("Autoencoder_Loss"):
                             auto_enc_loss=tf.reduce_sum(tf.square(Networks[Net].autoenc_out-Networks[Net].c3d_out))
 
-                    if z == 0:
-                        c3d_loss_sum = c3d_loss
-                        now_loss_sum = now_loss
-                        next_loss_sum = next_loss
-                        auto_enc_loss_sum = auto_enc_loss
-                        help_loss_sum = help_loss
-                    else:
-                        c3d_loss_sum += c3d_loss
-                        now_loss_sum += now_loss
-                        next_loss_sum += next_loss
-                        auto_enc_loss_sum += auto_enc_loss
-                        help_loss_sum += help_loss
-                    z += 1
+                        c3d_loss_coll.append(c3d_loss)
+                        now_loss_coll.append(now_loss)
+                        help_loss_coll.append(help_loss)
+                        next_loss_coll.append(next_loss)
+                        auto_loss_coll.append(auto_enc_loss)
+
+                c3d_loss_sum = sum(c3d_loss_coll)
+                now_loss_sum = sum(now_loss_coll)
+                next_loss_sum = sum(help_loss_coll)
+                auto_enc_loss_sum = sum(next_loss_coll)
+                help_loss_sum = sum(auto_loss_coll)
 
                 with tf.name_scope("Global_Loss"):
                     c3d_loss_sum = tf.cast(c3d_loss_sum, tf.float64)
@@ -411,7 +413,6 @@ class Training:
                     now_par = tf.pow(inference_recall,1)
                     next_par = tf.pow(next_recall,1)
                     total_loss = (c3d_par)*(now_par*(next_par*help_loss_sum + (1-next_par)*next_loss_sum) + (1-now_par)*now_loss_sum) + (1 - c3d_par) * c3d_loss_sum + auto_enc_loss_sum
-                    # total_loss = c3d_loss_sum + help_loss_sum + next_loss_sum + now_loss_sum + auto_enc_loss_sum
                     
             with tf.name_scope("Optimizer"):
                 Train_variable = [v for v in self.variables if 'Openpose' not in v.name.split('/')[0]]
