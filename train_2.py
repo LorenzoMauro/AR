@@ -17,7 +17,6 @@ from tensorflow.python.client import device_lib
 
 pp = pprint.PrettyPrinter(indent=4)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-os.environ['TF_CUDNN_USE_AUTOTUNE'] = '0'
 os.environ['TF_CUDNN_WORKSPACE_LIMIT_IN_MB'] = '0'
 tf_config = tf.ConfigProto(inter_op_parallelism_threads=config.inter_op_parallelism_threads, allow_soft_placement = True)
 tf_config.gpu_options.allow_growth = config.allow_growth
