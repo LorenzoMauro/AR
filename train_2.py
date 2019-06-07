@@ -84,7 +84,7 @@ def train():
             pbar = tqdm(total=(config.tasks * config.Batch_size * config.seq_len * len(available_gpus) * config.frames_per_step + len(available_gpus)*config.tasks - 1), leave=False, desc='Batch Generation')
             ready_batch = IO_tool.compute_batch(pbar, Devices=len(available_gpus), Train=training)
             for batch in ready_batch:
-                print(batch['obj_input'])
+                pp.pprint(batch['obj_input'][...,1,:])
                 summary, t_op, now_pred, next_pred, c3d_pred, help_pred, c_state, h_state = sess.run([Train_Net.merged, Train_Net.train_op,
                                                                                             Train_Net.predictions_now_conc, Train_Net.predictions_next_conc, Train_Net.predictions_c3d_conc, Train_Net.predictions_help_conc,
                                                                                             Train_Net.c_out_list, Train_Net.h_out_list],
