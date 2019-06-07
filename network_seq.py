@@ -11,23 +11,23 @@ pp = pprint.PrettyPrinter(indent=4)
 class Input_manager:
     def __init__(self, devices, IO_tool):
 
-        with tf.name_scope('Inputs'):
+        with tf.name_scope("Input"):
+            self.input_batch = tf.placeholder(tf.uint8, shape=(None, None, config.seq_len, config.frames_per_step, config.out_H, config.out_W, config.input_channels), name="Input")
+            self.h_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), None, config.lstm_units), name="h_input")
+            self.c_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), None, config.lstm_units), name="c_input")
+            self.obj_input = tf.placeholder(tf.float32, shape=(None, None, config.seq_len, len(IO_tool.dataset.word_to_id)), name="obj_input")
+            self.c_output = self.c_input
+            self.h_output = self.h_input
+            self.drop_out_prob = tf.placeholder_with_default(1.0, shape=())
 
-            with tf.name_scope("Input"):
-                self.input_batch = tf.placeholder(tf.uint8, shape=(None, None, config.seq_len, config.frames_per_step, config.out_H, config.out_W, config.input_channels), name="Input")
-                self.h_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), None, config.lstm_units), name="h_input")
-                self.c_input = tf.placeholder(tf.float32, shape=(None, len(config.encoder_lstm_layers), None, config.lstm_units), name="c_input")
-                self.obj_input = tf.placeholder(tf.float32, shape=(None, None, config.seq_len, len(IO_tool.dataset.word_to_id)), name="obj_input")
-                self.c_output = self.c_input
-                self.h_output = self.h_input
-                self.drop_out_prob = tf.placeholder_with_default(1.0, shape=())
-            with tf.name_scope('Object_Input'):
-                self.obj_input = tf.placeholder(tf.float32, shape=(None, None, config.seq_len, len(IO_tool.dataset.word_to_id)), name="obj_input")
-            with tf.name_scope("Target"):
-                self.labels = tf.placeholder(tf.int32, shape=(None, None, config.seq_len + 1), name="now_label")
-                self.help_labels = tf.placeholder(tf.int32, shape=(None, None, 4), name="help_label")
-                self.next_labels = tf.placeholder(tf.int32, shape=(None, None), name="next_label")
-                self.dec_embeddings = tf.Variable(tf.random_uniform([len(IO_tool.dataset.word_to_id), config.decoder_embedding_size]))
+        with tf.name_scope('Object_Input'):
+            self.obj_input = tf.placeholder(tf.float32, shape=(None, None, config.seq_len, len(IO_tool.dataset.word_to_id)), name="obj_input")
+        
+        with tf.name_scope("Target"):
+            self.labels = tf.placeholder(tf.int32, shape=(None, None, config.seq_len + 1), name="now_label")
+            self.help_labels = tf.placeholder(tf.int32, shape=(None, None, 4), name="help_label")
+            self.next_labels = tf.placeholder(tf.int32, shape=(None, None), name="next_label")
+            self.dec_embeddings = tf.Variable(tf.random_uniform([len(IO_tool.dataset.word_to_id), config.decoder_embedding_size]))
 
 class activity_network:
     def __init__(self, number_of_classes, Input_manager, device_j, IO_tool):
@@ -309,6 +309,7 @@ class Training:
 
             with tf.name_scope('Metrics'):
                 z = 0
+                zero = tf.constant(0, dtype=tf.float32)
                 for Net in Networks:
                     if z == 0:
                         c3d_pred_conc = Networks[Net].c3d_one_hot_prediction
@@ -324,7 +325,7 @@ class Training:
                         predictions_now_conc = Networks[Net].inference_predictions
                         predictions_help_conc = Networks[Net].help_inference_predictions
                         predictions_next_conc = Networks[Net].next_predictions
-                        obj_label_conc = Networks[Net].obj_input
+                        obj_label_conc = tf.where(tf.not_equal(Networks[Net].obj_input, zero))[:,-1]
                         z +=1
                     else:
                         c3d_pred_conc = tf.concat([c3d_pred_conc, Networks[Net].c3d_one_hot_prediction], axis=0)
@@ -340,7 +341,7 @@ class Training:
                         predictions_now_conc = tf.concat([predictions_now_conc,Networks[Net].inference_predictions], axis=0)
                         predictions_help_conc = tf.concat([predictions_help_conc,Networks[Net].help_inference_predictions], axis=0)
                         predictions_next_conc = tf.concat([predictions_next_conc,Networks[Net].next_predictions], axis=0)
-                        obj_label_conc = tf.concat([obj_label_conc,Networks[Net].obj_input], axis=0)
+                        obj_label_conc = tf.concat([obj_label_conc,tf.where(tf.not_equal(Networks[Net].obj_input, zero))[:,-1]], axis=0)
 
                 help_action_target = help_label_conc[...,0,:]
                 help_obj_target = help_label_conc[...,1,:]
