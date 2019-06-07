@@ -87,8 +87,8 @@ def train():
                 summary, t_op, now_pred, next_pred, c3d_pred, help_pred, c_state, h_state = sess.run([Train_Net.merged, Train_Net.train_op,
                                                                                             Train_Net.predictions_now_conc, Train_Net.predictions_next_conc, Train_Net.predictions_c3d_conc, Train_Net.predictions_help_conc,
                                                                                             Train_Net.c_out_list, Train_Net.h_out_list],
-                                                                                            options=run_options,
-                                                                                            run_metadata=run_metadata,
+                                                                                            # options=run_options,
+                                                                                            # run_metadata=run_metadata,
                                                                                             feed_dict={Input_net.input_batch: batch['X'],
                                                                                                         Input_net.drop_out_prob: config.plh_dropout,
                                                                                                         Input_net.labels: batch['Y'],
@@ -135,7 +135,7 @@ def train():
                 # print(np.reshape(help_pred[...,:3], (-1, 1)).shape)
 
                 step = step + config.Batch_size*len(available_gpus)
-                train_writer.add_run_metadata(run_metadata, 'step%d' % step)
+                # train_writer.add_run_metadata(run_metadata, 'step%d' % step)
                 train_writer.add_summary(summary, step)
                 pbar_whole.update(config.Batch_size*len(available_gpus))
 
