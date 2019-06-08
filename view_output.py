@@ -51,7 +51,7 @@ for video in collection:
                 comb_count[comb]['path'] = path
                 comb_count[comb]['second'] = sec
             else:
-                comb_count[comb] += 1
+                comb_count[comb]['count'] += 1
                 comb_count[comb]['path'] = path
                 comb_count[comb]['second'] = sec
 
