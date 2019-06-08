@@ -426,9 +426,9 @@ class Training:
                     next_loss_sum = tf.cast(next_loss_sum, tf.float64)
                     auto_enc_loss_sum = tf.cast(auto_enc_loss_sum, tf.float64)
                     help_loss_sum = tf.cast(help_loss_sum, tf.float64)
-                    c3d_par = tf.clip_by_value(tf.pow(c3d_recall,2), 0, 0.5))
-                    now_par = tf.clip_by_value(tf.pow(inference_recall,4), 0, 0.5))
-                    next_par = tf.clip_by_value(tf.pow(next_recall,2), 0, 0.5))
+                    c3d_par = tf.clip_by_value(tf.pow(c3d_recall,2), 0, 0.5)
+                    now_par = tf.clip_by_value(tf.pow(inference_recall,4), 0, 0.5)
+                    next_par = tf.clip_by_value(tf.pow(next_recall,2), 0, 0.5)
                     total_loss = (c3d_par)*(now_par*(next_par*help_loss_sum + (1-next_par)*next_loss_sum) + (1-now_par)*now_loss_sum) + (1 - c3d_par) * c3d_loss_sum + auto_enc_loss_sum
                     
             with tf.name_scope("Optimizer"):
