@@ -171,7 +171,7 @@ class activity_network:
                 return lstm_cell
                 
             with tf.name_scope("Lstm_encoder"):
-                tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=0.5)
+                tf.nn.rnn_cell.DropoutWrapper(lstm_cell_with_drop_out(), output_keep_prob=0.5)
                 encoder_cells = [lstm_cell_with_drop_out() for n in config.encoder_lstm_layers]
                 stacked_cell = tf.contrib.rnn.MultiRNNCell(encoder_cells)
 
@@ -218,7 +218,7 @@ class activity_network:
                 return logit
 
             with tf.name_scope('Now_Decoder_block'):
-                now_decoder, now_output_layer = decoder_lstm(config.lstm_units)
+                now_decoder, now_output_layer = decoder_lstm()
 
             with tf.name_scope('Now_Decoder_inference'):
                 self.inference_logit = decoding_layer_infer(encoder_state, now_decoder, Input_manager.dec_embeddings, IO_tool.dataset.word_to_id['go'],
@@ -260,7 +260,7 @@ class activity_network:
                 help_state = tf.contrib.rnn.LSTMStateTuple(new_c, new_h)
             
             with tf.name_scope('Help_Decoder_block'):
-                help_decoder, help_output_layer = decoder_lstm(config.lstm_units)
+                help_decoder, help_output_layer = decoder_lstm()
 
             with tf.name_scope('Help_Decoder_inference'):
                 self.help_inference_logit = decoding_layer_infer(help_state, help_decoder, Input_manager.dec_embeddings, IO_tool.dataset.word_to_id['go'],
