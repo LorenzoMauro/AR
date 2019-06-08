@@ -15,7 +15,7 @@ import datetime
 with open('dataset/ordered_collection.pkl', 'rb') as f:
     collection = pickle.load(f)
 
-with open('dataset/id_to_kabel.pkl', 'rb') as f:
+with open('dataset/id_to_label.pkl', 'rb') as f:
     id_to_label = pickle.load(f)
 
 comb_count = {}
