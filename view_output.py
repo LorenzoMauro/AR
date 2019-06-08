@@ -42,9 +42,9 @@ for video in collection:
         comb = ''
         if len(step_history) >= 4:
             for step_label in step_history[-4:]:
-                comb += id_to_label[step_label] + '-'
-            comb +=  id_to_label[next_label] + '-' +  id_to_label[help_label]
-            comb = comb.replace(' ', '-')
+                comb += id_to_label[step_label] + '#'
+            comb +=  id_to_label[next_label] + '#' +  id_to_label[help_label]
+            comb = comb.replace(' ', '#')
             if comb not in comb_count:
                 comb_count[comb] = {}
                 comb_count[comb]['count'] = 1
