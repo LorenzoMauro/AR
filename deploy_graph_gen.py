@@ -2,9 +2,9 @@ import tensorflow as tf
 from tensorflow.python.client import device_lib
 import os
 from batch_generator_test import IO_manager
-from network_deploy import activity_network
-from network_deploy import Training
-from network_deploy import Input_manager
+from network_seq import activity_network
+from network_seq import Training
+from network_seq import Input_manager
 import pprint
 import config
 import pprint
