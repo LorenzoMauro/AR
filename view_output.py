@@ -22,7 +22,7 @@ comb_count = {}
 for video in collection:
     step_history = []
     path = collection[video][0]['path']
-    if 'cam_0' in path or 'cam_6' in path:
+    if 'cam0' in path or 'cam6' in path:
         continue
     for sec in collection[video]:
         entry = collection[video][sec]
