@@ -19,6 +19,9 @@ class Input_manager:
             self.c_output = self.c_input
             self.h_output = self.h_input
             self.drop_out_prob = tf.placeholder_with_default(1.0, shape=())
+            self.in_lstm_drop_out_prob = tf.placeholder_with_default(1.0, shape=())
+            self.drop_out_prob = tf.placeholder_with_default(1.0, shape=())
+            self.drop_out_prob = tf.placeholder_with_default(1.0, shape=())
 
         with tf.name_scope('Object_Input'):
             self.obj_input = tf.placeholder(tf.float32, shape=(None, None, config.seq_len, len(IO_tool.dataset.word_to_id)), name="obj_input")
@@ -66,6 +69,9 @@ class activity_network:
                 self.c_input = Input_manager.c_input[device_j, :, :, :]
                 self.c_input.set_shape([len(config.encoder_lstm_layers), None, config.lstm_units])
                 drop_out_prob = Input_manager.drop_out_prob
+                in_lstm_drop_out_prob = Input_manager.in_lstm_drop_out_prob
+                out_lstm_drop_out_prob = Input_manager.drop_out_prob
+                state_lstm_drop_out_prob = Input_manager.drop_out_prob
                 self.obj_input = Input_manager.obj_input[device_j, ...]
 
             with tf.name_scope("Now_Target"):
@@ -156,8 +162,17 @@ class activity_network:
                 concateneted_encoder_vector = tf.concat([self.out_pL, self.obj_input], -1)
                 encoder_input = tf.layers.dense(concateneted_encoder_vector, config.lstm_units)
 
+            def lstm_cell_with_drop_out():
+                lstm_cell = tf.contrib.rnn.LSTMCell(config.lstm_units, initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2))
+                lstm_cell =tf.nn.rnn_cell.DropoutWrapper(lstm_cell, 
+                                                        input_keep_prob=in_lstm_drop_out_prob, 
+                                                        output_keep_prob=out_lstm_drop_out_prob, 
+                                                        state_keep_prob=state_lstm_drop_out_prob)
+                return lstm_cell
+                
             with tf.name_scope("Lstm_encoder"):
-                encoder_cells = [tf.contrib.rnn.LSTMCell(config.lstm_units) for n in config.encoder_lstm_layers]
+                tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=0.5)
+                encoder_cells = [lstm_cell_with_drop_out() for n in config.encoder_lstm_layers]
                 stacked_cell = tf.contrib.rnn.MultiRNNCell(encoder_cells)
 
                 states = []
@@ -182,9 +197,9 @@ class activity_network:
                 deploy_h = tf.identity(h_out, name="h_out")
                 encoder_state = encoder_state[-1]
    
-            def decoder_lstm(dec_lstm_units):
+            def decoder_lstm():
                 output_layer = tf.layers.Dense(self.out_vocab_size, kernel_initializer = tf.truncated_normal_initializer(mean = 0.0, stddev=0.1), activation='tanh')
-                decoder_cell = tf.contrib.rnn.LSTMCell(dec_lstm_units, initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2))
+                decoder_cell = lstm_cell_with_drop_out()
                 return decoder_cell, output_layer
 
             def lstm_classifier(logit):
@@ -220,7 +235,7 @@ class activity_network:
                 flat_input = tf.concat([flat_now, flat_obj], 1)
                 next_input = tf.layers.dense(flat_input, config.lstm_units, activation='tanh')
                 next_input = tf.reshape(next_input, [-1, 1, config.lstm_units])
-                next_decoder_cell = tf.contrib.rnn.LSTMCell(config.lstm_units)
+                next_decoder_cell = lstm_cell_with_drop_out()
                 _, next_out_state = tf.nn.dynamic_rnn(next_decoder_cell, next_input,
                                                                     initial_state=encoder_state,
                                                                     dtype=tf.float32)
@@ -411,9 +426,9 @@ class Training:
                     next_loss_sum = tf.cast(next_loss_sum, tf.float64)
                     auto_enc_loss_sum = tf.cast(auto_enc_loss_sum, tf.float64)
                     help_loss_sum = tf.cast(help_loss_sum, tf.float64)
-                    c3d_par = tf.pow(c3d_recall,2)
-                    now_par = tf.pow(inference_recall,4)
-                    next_par = tf.pow(next_recall,6)
+                    c3d_par = tf.clip_by_value(tf.pow(c3d_recall,2), 0, 0.5))
+                    now_par = tf.clip_by_value(tf.pow(inference_recall,4), 0, 0.5))
+                    next_par = tf.clip_by_value(tf.pow(next_recall,2), 0, 0.5))
                     total_loss = (c3d_par)*(now_par*(next_par*help_loss_sum + (1-next_par)*next_loss_sum) + (1-now_par)*now_loss_sum) + (1 - c3d_par) * c3d_loss_sum + auto_enc_loss_sum
                     
             with tf.name_scope("Optimizer"):
