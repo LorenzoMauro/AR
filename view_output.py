@@ -48,11 +48,11 @@ for video in collection:
             if comb not in comb_count:
                 comb_count[comb] = {}
                 comb_count[comb]['count'] = 1
-                comb_count[comb]['path'] = path
+                comb_count[comb]['path'] = video
                 comb_count[comb]['second'] = sec
             else:
                 comb_count[comb]['count'] += 1
-                comb_count[comb]['path'] = path
+                comb_count[comb]['path'] = video
                 comb_count[comb]['second'] = sec
 
 with open('dataset/comb_count.csv', 'w') as f:
