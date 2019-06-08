@@ -20,8 +20,8 @@ class Input_manager:
             self.h_output = self.h_input
             self.drop_out_prob = tf.placeholder_with_default(1.0, shape=())
             self.in_lstm_drop_out_prob = tf.placeholder_with_default(1.0, shape=())
-            self.drop_out_prob = tf.placeholder_with_default(1.0, shape=())
-            self.drop_out_prob = tf.placeholder_with_default(1.0, shape=())
+            self.out_lstm_drop_out_prob = tf.placeholder_with_default(1.0, shape=())
+            self.state_lstm_drop_out_prob = tf.placeholder_with_default(1.0, shape=())
 
         with tf.name_scope('Object_Input'):
             self.obj_input = tf.placeholder(tf.float32, shape=(None, None, config.seq_len, len(IO_tool.dataset.word_to_id)), name="obj_input")
@@ -70,8 +70,8 @@ class activity_network:
                 self.c_input.set_shape([len(config.encoder_lstm_layers), None, config.lstm_units])
                 drop_out_prob = Input_manager.drop_out_prob
                 in_lstm_drop_out_prob = Input_manager.in_lstm_drop_out_prob
-                out_lstm_drop_out_prob = Input_manager.drop_out_prob
-                state_lstm_drop_out_prob = Input_manager.drop_out_prob
+                out_lstm_drop_out_prob = Input_manager.out_lstm_drop_out_prob
+                state_lstm_drop_out_prob = Input_manager.state_lstm_drop_out_prob
                 self.obj_input = Input_manager.obj_input[device_j, ...]
 
             with tf.name_scope("Now_Target"):
