@@ -43,16 +43,20 @@ for video in collection:
         if len(step_history) >= 4:
             for step_label in step_history[-4:]:
                 comb += id_to_label[step_label] + '#'
-            comb +=  id_to_label[next_label] + '#' +  id_to_label[help_label]
+            help_word = id_to_label[help_label]
+            if help_word = 'sil':
+                help_word = 'sil sil sil'
+            comb +=  id_to_label[next_label] + '#' +  help_word
             comb = comb.replace(' ', '#')
+            video_name = video.split('/')[-1)
             if comb not in comb_count:
                 comb_count[comb] = {}
                 comb_count[comb]['count'] = 1
-                comb_count[comb]['path'] = video
+                comb_count[comb]['path'] = video_name
                 comb_count[comb]['second'] = sec
             else:
                 comb_count[comb]['count'] += 1
-                comb_count[comb]['path'] = video
+                comb_count[comb]['path'] = video_name
                 comb_count[comb]['second'] = sec
 
 with open('dataset/comb_count.csv', 'w') as f:
