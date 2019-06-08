@@ -178,6 +178,8 @@ class activity_network:
                     h_out = tf.concat([h_out, h_exp], axis=0)
                 self.c_out = c_out
                 self.h_out = h_out
+                deploy_c = tf.identity(c_out, name="c_out")
+                deploy_h = tf.identity(h_out, name="h_out")
                 encoder_state = encoder_state[-1]
    
             def decoder_lstm(dec_lstm_units):
