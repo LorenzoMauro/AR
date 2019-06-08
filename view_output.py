@@ -44,7 +44,7 @@ for video in collection:
             for step_label in step_history[-4:]:
                 comb += id_to_label[step_label] + '#'
             help_word = id_to_label[help_label]
-            if help_word = 'sil':
+            if help_word == 'sil':
                 help_word = 'sil sil sil'
             comb +=  id_to_label[next_label] + '#' +  help_word
             comb = comb.replace(' ', '#')
