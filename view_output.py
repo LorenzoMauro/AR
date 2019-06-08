@@ -21,7 +21,7 @@ with open('dataset/id_to_label.pkl', 'rb') as f:
 comb_count = {}
 for video in collection:
     step_history = []
-    path = collection[video][0][path]
+    path = collection[video][0]['path']
     if 'cam_0' in path or 'cam_6' in path:
         continue
     for sec in collection[video]:
