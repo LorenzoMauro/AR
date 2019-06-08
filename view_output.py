@@ -48,7 +48,7 @@ for video in collection:
                 help_word = 'sil sil sil'
             comb +=  id_to_label[next_label] + '#' +  help_word
             comb = comb.replace(' ', '#')
-            video_name = video.split('/')[-1)
+            video_name = video.split('/')[-1]
             if comb not in comb_count:
                 comb_count[comb] = {}
                 comb_count[comb]['count'] = 1
