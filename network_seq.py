@@ -364,7 +364,7 @@ class Training:
                         predictions_help_conc = tf.concat([predictions_help_conc,Networks[Net].help_inference_predictions], axis=0)
                         predictions_next_conc = tf.concat([predictions_next_conc,Networks[Net].next_predictions], axis=0)
                         obj_label_conc = tf.concat([obj_label_conc,tf.where(tf.not_equal(Networks[Net].obj_input, zero))[:,-1]], axis=0)
-                        flat_soft = tf.concat([flat_soft,tf.reshape(Networks[Net].softmax_c3d, [-1, last_dim_softmax]), axis=0)
+                        flat_soft = tf.concat([flat_soft,tf.reshape(Networks[Net].softmax_c3d, [-1, last_dim_softmax])], axis=0)
                         flat_soft = tf.concat([flat_soft,tf.reshape(Networks[Net].inference_softmax, [-1, last_dim_softmax])], axis=0)
                         flat_soft = tf.concat([flat_soft,tf.reshape(Networks[Net].next_softmax, [-1, last_dim_softmax])], axis=0)
                         flat_soft = tf.concat([flat_soft,tf.reshape(Networks[Net].help_inference_softmax, [-1, last_dim_softmax])], axis=0)
