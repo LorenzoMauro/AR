@@ -28,7 +28,7 @@ is_ordered = False
 #[Network]
 learning_rate_start = 0.0001
 gradient_clipping_norm = 1.0
-plh_dropout = 0.4
+plh_dropout = 0.3
 c3d_dropout = 0.6
 preLstm_dropout = 0.6
 Lstm_dropout = 0.6
