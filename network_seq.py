@@ -380,8 +380,8 @@ class Training:
                 help_action_pred = help_inf_pred_conc[...,0,:]
                 help_obj_pred = help_inf_pred_conc[...,1,:]
                 help_loc_pred = help_inf_pred_conc[...,2,:]
-                flat_soft_min = tf.math.reduce_min(flat_soft, axis=1)
-                flat_soft_max = tf.math.reduce_max(flat_soft, axis=1)
+                flat_soft_min = tf.reduce_min(flat_soft, axis=1)
+                flat_soft_max = tf.reduce_max(flat_soft, axis=1)
                 diff_soft = flat_soft_max -flat_soft_min
 
                 with tf.name_scope('Metrics_calculation'):
