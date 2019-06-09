@@ -283,7 +283,9 @@ class activity_network:
                 in_c3d_class = dense2_cd
                 reshaped_c3d_out = tf.reshape(in_c3d_class , [-1, in_c3d_class.shape[-1]])
                 dense_out = tf.layers.dense(reshaped_c3d_out, config.lstm_units)
+                dense_out = tf.nn.dropout(dense_out, drop_out_prob)
                 dense_out = tf.layers.dense(dense_out, config.lstm_units)
+                dense_out = tf.nn.dropout(dense_out, drop_out_prob)
                 dense_out = tf.layers.dense(dense_out, self.number_of_classes)
                 # dense_out = c3d_classifier_dense(reshaped_c3d_out)
                 self.logit_c3d = tf.reshape(dense_out, [-1,in_c3d_class.shape[-2],dense_out.shape[-1]])
