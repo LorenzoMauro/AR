@@ -380,6 +380,9 @@ class Training:
                 help_action_pred = help_inf_pred_conc[...,0,:]
                 help_obj_pred = help_inf_pred_conc[...,1,:]
                 help_loc_pred = help_inf_pred_conc[...,2,:]
+                flat_soft_min = tf.math.reduce_min(flat_soft, axis=1)
+                flat_soft_max = tf.math.reduce_max(flat_soft, axis=1)
+                diff_soft = flat_soft_max -flat_soft_min
 
                 with tf.name_scope('Metrics_calculation'):
                     c3d_precision, c3d_recall, c3d_f1, c3d_accuracy = self.accuracy_metrics(c3d_pred_conc, now_label_conc[:,:-1,:])
@@ -511,6 +514,8 @@ class Training:
 
                 tf.summary.histogram("obj_histogram", obj_label_conc)
                 tf.summary.histogram("flat_soft", flat_soft)
+                tf.summary.histogram("diff_soft", diff_soft)
+                tf.summary.scalar('mean_diff_soft', tf.reduce_mean(diff_soft))
                 tf.summary.scalar('auto_enc_loss_sum', auto_enc_loss_sum)
                 self.merged = tf.summary.merge_all()
 
