@@ -280,10 +280,10 @@ class activity_network:
                 return logit
 
             with tf.name_scope('c3d_classifier'):
-                reshaped_c3d_out = tf.reshape(self.out_pL, [-1, self.out_pL.shape[-1]])
+                reshaped_c3d_out = tf.reshape(self.c3d_out , [-1, self.c3d_out.shape[-1]])
                 dense_out = tf.layers.dense(reshaped_c3d_out, self.number_of_classes, name="c3d_dense_3")
                 # dense_out = c3d_classifier_dense(reshaped_c3d_out)
-                self.logit_c3d = tf.reshape(dense_out, [-1,self.out_pL.shape[-2],dense_out.shape[-1]])
+                self.logit_c3d = tf.reshape(dense_out, [-1,self.c3d_out.shape[-2],dense_out.shape[-1]])
                 self.softmax_c3d = tf.nn.softmax(self.logit_c3d)
                 self.predictions_c3d = tf.argmax(input=self.softmax_c3d, axis=2, name="c3d_prediction")
                 self.c3d_one_hot_prediction= tf.one_hot(self.predictions_c3d, depth = self.softmax_c3d.shape[-1])
@@ -328,6 +328,7 @@ class Training:
                 z = 0
                 zero = tf.constant(0, dtype=tf.float32)
                 for Net in Networks:
+                    last_dim_softmax = len(IO_tool.dataset.word_to_id)
                     if z == 0:
                         c3d_pred_conc = Networks[Net].c3d_one_hot_prediction
                         # now_pred_conc = Networks[Net].now_one_hot_prediction
@@ -343,6 +344,10 @@ class Training:
                         predictions_help_conc = Networks[Net].help_inference_predictions
                         predictions_next_conc = Networks[Net].next_predictions
                         obj_label_conc = tf.where(tf.not_equal(Networks[Net].obj_input, zero))[:,-1]
+                        flat_soft = tf.reshape(Networks[Net].softmax_c3d, [-1, last_dim_softmax])
+                        flat_soft = tf.concat([flat_soft,tf.reshape(Networks[Net].inference_softmax, [-1, last_dim_softmax])], axis=0)
+                        flat_soft = tf.concat([flat_soft,tf.reshape(Networks[Net].next_softmax, [-1, last_dim_softmax])], axis=0)
+                        flat_soft = tf.concat([flat_soft,tf.reshape(Networks[Net].help_inference_softmax, [-1, last_dim_softmax])], axis=0)
                         z +=1
                     else:
                         c3d_pred_conc = tf.concat([c3d_pred_conc, Networks[Net].c3d_one_hot_prediction], axis=0)
@@ -359,6 +364,10 @@ class Training:
                         predictions_help_conc = tf.concat([predictions_help_conc,Networks[Net].help_inference_predictions], axis=0)
                         predictions_next_conc = tf.concat([predictions_next_conc,Networks[Net].next_predictions], axis=0)
                         obj_label_conc = tf.concat([obj_label_conc,tf.where(tf.not_equal(Networks[Net].obj_input, zero))[:,-1]], axis=0)
+                        flat_soft = tf.concat([flat_soft,tf.reshape(Networks[Net].softmax_c3d, [-1, last_dim_softmax]), axis=0)
+                        flat_soft = tf.concat([flat_soft,tf.reshape(Networks[Net].inference_softmax, [-1, last_dim_softmax])], axis=0)
+                        flat_soft = tf.concat([flat_soft,tf.reshape(Networks[Net].next_softmax, [-1, last_dim_softmax])], axis=0)
+                        flat_soft = tf.concat([flat_soft,tf.reshape(Networks[Net].help_inference_softmax, [-1, last_dim_softmax])], axis=0)
 
                 help_action_target = help_label_conc[...,0,:]
                 help_obj_target = help_label_conc[...,1,:]
@@ -496,7 +505,7 @@ class Training:
                     tf.summary.histogram("c3d_classification", predictions_c3d_conc)
 
                 tf.summary.histogram("obj_histogram", obj_label_conc)
-
+                tf.summary.histogram("flat_soft", flat_soft)
                 tf.summary.scalar('auto_enc_loss_sum', auto_enc_loss_sum)
                 self.merged = tf.summary.merge_all()
 
