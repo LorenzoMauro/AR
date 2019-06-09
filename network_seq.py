@@ -280,10 +280,11 @@ class activity_network:
                 return logit
 
             with tf.name_scope('c3d_classifier'):
-                reshaped_c3d_out = tf.reshape(self.c3d_out , [-1, self.c3d_out.shape[-1]])
+                in_c3d_class = dense2_cd
+                reshaped_c3d_out = tf.reshape(in_c3d_class , [-1, in_c3d_class.shape[-1]])
                 dense_out = tf.layers.dense(reshaped_c3d_out, self.number_of_classes, name="c3d_dense_3")
                 # dense_out = c3d_classifier_dense(reshaped_c3d_out)
-                self.logit_c3d = tf.reshape(dense_out, [-1,self.c3d_out.shape[-2],dense_out.shape[-1]])
+                self.logit_c3d = tf.reshape(dense_out, [-1,in_c3d_class.shape[-2],dense_out.shape[-1]])
                 self.softmax_c3d = tf.nn.softmax(self.logit_c3d)
                 self.predictions_c3d = tf.argmax(input=self.softmax_c3d, axis=2, name="c3d_prediction")
                 self.c3d_one_hot_prediction= tf.one_hot(self.predictions_c3d, depth = self.softmax_c3d.shape[-1])
