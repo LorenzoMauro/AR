@@ -61,7 +61,7 @@ validation_fraction = 0.15
 split_seconds = True
 
 #[Annotation]
-rebuild = False
+rebuild = True
 limit_classes = True
 use_prep = True
 classes_to_use = ['milk', 'coffee'] # ['friedegg', 'cereals', 'milk']
