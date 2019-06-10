@@ -132,10 +132,10 @@ class IO_manager:
                         obj_input[d, j, s, position] = value
 
                     if config.add_location:
-                        location_labal = entry['location_labal']
-                        for loc in location_labal.keys():
+                        location_label = entry['location_label']
+                        for loc in location_label.keys():
                             position = self.dataset.word_to_id[loc]
-                            value = location_labal[loc]
+                            value = location_label[loc]
                             obj_input[d, j, s, position] = value
 
                     if s == 0:
