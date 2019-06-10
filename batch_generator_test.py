@@ -127,7 +127,6 @@ class IO_manager:
 
                     obj_label = entry['obj_label']
                     for obj in obj_label.keys():
-                        print('\n', self.dataset.word_to_id[obj], obj)
                         position = self.dataset.word_to_id[obj]
                         value = obj_label[obj]
                         obj_input[d, j, s, position] = value
