@@ -134,7 +134,6 @@ class IO_manager:
                     if config.add_location:
                         location_label = entry['location_label']
                         for loc in location_label.keys():
-                            print('\n', self.dataset.word_to_id[loc], loc)
                             position = self.dataset.word_to_id[loc]
                             value = location_label[loc]
                             obj_input[d, j, s, position] = value
