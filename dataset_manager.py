@@ -266,7 +266,7 @@ class Dataset:
                 current_label = self.label_calculator(frame_list, path, 'now')
                 next_label = self.label_calculator(frame_list, path, 'next')
                 help_label = self.label_calculator(frame_list, path, 'help')
-                mask_frame_list =  [np.max(f-fps, 1) for f in frame_list]
+                mask_frame_list =  [max(f-fps, 1) for f in frame_list]
                 obj_label = self.object_return(mask_frame_list, path)
                 location_label = self.location_return(mask_frame_list, path)
                 # if current_label == 0:
