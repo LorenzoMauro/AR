@@ -236,18 +236,18 @@ def train():
                             pred_help = np.reshape(help_pred[...,:3], (-1, 1))
 
                             data_collection = {}
-                            data_collection['now_train'] = {}
-                            data_collection['now_train']['taget'] = target_now
-                            data_collection['now_train']['y_pred'] = pred_now
-                            data_collection['c3d_train'] = {}
-                            data_collection['c3d_train']['taget'] = target_c3d
-                            data_collection['c3d_train']['y_pred'] = pred_c3d
-                            data_collection['next_train'] = {}
-                            data_collection['next_train']['taget'] = target_next
-                            data_collection['next_train']['y_pred'] = pred_next
-                            data_collection['help_train'] = {}
-                            data_collection['help_train']['taget'] = target_help
-                            data_collection['help_train']['y_pred'] = pred_help
+                            data_collection['now_val'] = {}
+                            data_collection['now_val']['taget'] = target_now
+                            data_collection['now_val']['y_pred'] = pred_now
+                            data_collection['c3d_val'] = {}
+                            data_collection['c3d_val']['taget'] = target_c3d
+                            data_collection['c3d_val']['y_pred'] = pred_c3d
+                            data_collection['next_val'] = {}
+                            data_collection['next_val']['taget'] = target_next
+                            data_collection['next_val']['y_pred'] = pred_next
+                            data_collection['help_val'] = {}
+                            data_collection['help_val']['taget'] = target_help
+                            data_collection['help_val']['y_pred'] = pred_help
                             pbar_val_batch.update(1)
                             confusion_tool.update_confusion(data_collection, val_writer, val_step)
                             val_writer.add_summary(summary, val_step + config.Batch_size*len(available_gpus))
