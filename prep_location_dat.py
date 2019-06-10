@@ -46,6 +46,6 @@ for key in obj_dataset:
         new_collection_video_name[folder] = obj_dataset[key]
 
 pp.pprint(list(new_collection_video_name.keys()))
-
+print(folder_to_name)
 with open(config.kit_obj_annotation, 'w') as outfile:
     json.dump(new_collection_video_name, outfile)
