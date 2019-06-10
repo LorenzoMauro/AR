@@ -14,4 +14,5 @@ def load(name):
 
 ordered_collection = load('ordered_collection')
 
-pp.pprint(ordered_collection)
+keys = ordered_collection.keys()
+pp.pprint(ordered_collection[keys[0]][0])
