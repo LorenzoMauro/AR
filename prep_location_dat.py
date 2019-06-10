@@ -37,9 +37,9 @@ for root, dirs, files in os.walk('dataset/location_label'):
 
 new_collection_video_name = {}
 for key in obj_dataset:
-    folder = ('Trial' + key.split('Trial')[1]).lower()
+    folder = ('Trial' + key.split('Trial')[1]).lower().split('.')[0]
     if folder in folder_to_name:
-        name = folder_to_name[folder.split('.')[0]]
+        name = folder_to_name[folder]
         cut_video_name = name.split('cam')[0]
         new_collection_video_name[cut_video_name] = obj_dataset[folder]
     else:
