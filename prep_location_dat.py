@@ -41,7 +41,7 @@ for key in obj_dataset:
     if folder in folder_to_name:
         name = folder_to_name[folder]
         cut_video_name = name.split('cam')[0]
-        new_collection_video_name[cut_video_name] = obj_dataset[folder]
+        new_collection_video_name[cut_video_name] = obj_dataset[key]
     else:
         new_collection_video_name[folder] = obj_dataset[key]
 
