@@ -36,14 +36,14 @@ for root, dirs, files in os.walk('dataset/location_label'):
             print(len(obj_dataset))
 
 new_collection_video_name = {}
-for folder in obj_dataset:
+for key in obj_dataset:
     folder = 'Trial' + folder.split('Trial')[1]
     if folder in folder_to_name:
         name = folder_to_name[folder]
         cut_video_name = name.split('cam')[0]
         new_collection_video_name[cut_video_name] = obj_dataset[folder]
     else:
-        new_collection_video_name[folder] = obj_dataset[folder]
+        new_collection_video_name[folder] = obj_dataset[key]
 
 pp.pprint(list(new_collection_video_name.keys()))
 
