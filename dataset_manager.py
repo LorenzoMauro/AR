@@ -47,7 +47,7 @@ class Dataset:
         else:
             self.generate_dataset()
 
-        # pp.pprint(self.word_to_id)
+        pp.pprint(self.word_to_id)
         # pp.pprint(self.id_to_word)
         # pp.pprint(self.id_to_label)
         # pp.pprint(self.id_to_word)
