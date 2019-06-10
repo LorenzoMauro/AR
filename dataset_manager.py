@@ -60,6 +60,7 @@ class Dataset:
         self.frame_label =  annotation.frames_label
         self.object_label = annotation.object_label
         self.obj_id_2_label = annotation.obj_id_2_label
+        self.location_label = annotation.location_label
         self.word_to_id, self.id_to_word = self.create_labels_mappings_network(self.label_to_id)
         self.number_of_classes = len(self.word_to_id)
         self.save(self.label_to_id, 'label_to_id')
@@ -265,7 +266,9 @@ class Dataset:
                 current_label = self.label_calculator(frame_list, path, 'now')
                 next_label = self.label_calculator(frame_list, path, 'next')
                 help_label = self.label_calculator(frame_list, path, 'help')
-                obj_label = self.object_return(frame_list, path)
+                mask_frame_list =  [np.max(f-fps, 1) for f in frame_list]
+                obj_label = self.object_return(mask_frame_list, path)
+                location_label = self.location_return(mask_frame_list, path)
                 # if current_label == 0:
                     # continue
                 if len(label_history) == 0:
@@ -311,7 +314,7 @@ class Dataset:
 
                 entry = {'now_label' : current_label, 'next_label' : next_label, 'all_next_label' : couple,
                          'path': path, 'segment':segment, 'history':label_history, 'time_step': step,
-                         'help': help_label, 'step_history': step_history, 'obj_label': obj_label}
+                         'help': help_label, 'step_history': step_history, 'obj_label': obj_label, 'location_label': location_label}
                 if path not in ordered_collection:
                     ordered_collection[path] = {}
                 ordered_collection[path][step] = entry
@@ -404,6 +407,24 @@ class Dataset:
                 obj_prob = obj_list['scores'][idx]
                 obj_word = self.obj_id_2_label[obj_id]
                 out[obj_word] = obj_prob
+        return out
+
+    def location_return(self, frame_list, path):
+        cut_name = path.split('/')[-1]
+        cut_name = cut_name.split('cam')[0]
+        frame = str(int((frame_list[0]+frame_list[-1])/2))
+        out = {}
+        if cut_name in self.location_label:
+            location = self.location_label[cut_name][frame]
+            if type(location) is str:
+                if location != 'No person' and location !='No diverter':
+                    if location == "Technician under Diverter":
+                        location = 'under_diverter'
+                    if location == "Technician on the Ladder":
+                        location = 'on_ladder'
+                    if location == "Technician next to Guard":
+                        location = 'at_guard_support'
+                    out[location] = 1.0
         return out
 
     def save(self, obj, name):

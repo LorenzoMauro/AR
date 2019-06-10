@@ -25,7 +25,8 @@ tree_or_graph = "graph"
 balance_key = 'all'
 is_ordered = False
 
-#[Network]
+#[Network]7
+
 learning_rate_start = 0.0001
 gradient_clipping_norm = 1.0
 plh_dropout = 0.5
@@ -66,6 +67,7 @@ use_prep = True
 classes_to_use = ['milk', 'coffee'] # ['friedegg', 'cereals', 'milk']
 ocado_annotation = 'dataset/ocado.json'
 kit_obj_annotation = 'dataset/kit_obj.json'
+kit_loc_annotation = 'dataset/kit_loc.json'
 kit_activity_annotation = 'dataset/kit_activity.json'
 kit_help_annotation_temp = 'dataset/kit_help_temp.json'
 kit_help_annotation = 'dataset/kit_help.json'
@@ -79,6 +81,7 @@ iccv_json = ['Long jump.json', 'Triple jump.json']
 iccv__annotation = breakfast_annotation = 'dataset/iccv.json'
 dataset = 'Ocado'
 breakfast_fps = 15
+add_location = True
 
 
 #confusion

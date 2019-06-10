@@ -120,17 +120,23 @@ class IO_manager:
                         one_input, frame_list = self.extract_one_input(path, segment, pbar)
                     config.snow_ball_step_count += 1
 
-                    obj_label = entry['obj_label']
                     
                     batch[d, j, s, :, :, :, :] = one_input
                     labels[d, j, s] = current_label
                     now_weight[d, j, s] = self.dataset.now_weigth[current_label]
 
+                    obj_label = entry['obj_label']
                     for obj in obj_label.keys():
                         position = self.dataset.word_to_id[obj]
                         value = obj_label[obj]
                         obj_input[d, j, s, position] = value
 
+                    if config.add_location:
+                        location_labal = entry['location_labal']
+                        for loc in location_labal.keys():
+                            position = self.dataset.word_to_id[loc]
+                            value = location_labal[loc]
+                            obj_input[d, j, s, position] = value
 
                     if s == 0:
                         if path in self.hidden_states_collection:

@@ -14,6 +14,8 @@ class Annotation:
         help_dataset = json.loads(json_data)
         json_data = open(config.kit_obj_annotation).read()
         self.object_label = json.loads(json_data)
+        json_data = open(config.kit_loc_annotation).read()
+        self.location_label = json.loads(json_data)
         self.dataset, self.frames_label, self.label_to_id, self.id_to_label = self.create_ocado_annotation(activity_dataset, help_dataset)
 
         self.obj_id_2_label = { 0: 'BG',
