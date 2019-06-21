@@ -224,7 +224,8 @@ class Dataset:
                                 validation[r_now][r_next][r_help] = []
                             validation[r_now][r_next][r_help].append(entry)
                         else:
-                            train_path.append(path)
+                            if path not in test_path:
+                                train_path.append(path)
                             if r_now not in train:
                                 train[r_now] = {}
                             if r_next not in train[r_now]:
