@@ -190,7 +190,7 @@ class Dataset:
         entry_val = int(len(take_collection) * self.validation_fraction)
         test_take = []
         while len(test_take) < entry_val + 1:
-            new_test_take = random.choice(list(self.take_collection))
+            new_test_take = random.choice(list(take_collection))
             test_take.append(new_test_take)
             if len(test_take) == entry_val + 1:
                 test_with_robot = [x for x in test_take if 'robot' in x]
