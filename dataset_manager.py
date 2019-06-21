@@ -183,11 +183,9 @@ class Dataset:
         random.seed(time.time())
         take_collection = []
         for path in self.ordered_collection:
-            print(path.split('/'))
-            take = path.split('/')[-2]
-            day = path.split('/')[-3]
-            day_take = day + '/' + take
-            take_collection.append(day_take)
+            take = path.split('/')[-1]
+            take = take.split('_cam')[1]
+            take_collection.append(take)
         entry_val = int(len(take_collection) * self.validation_fraction)
         test_take = []
         while len(test_take) < entry_val + 1:
@@ -200,10 +198,9 @@ class Dataset:
 
         test_path = []
         for path in self.ordered_collection:
-            take = path.split('/')[-2]
-            day = path.split('/')[-3]
-            day_take = day + '/' + take
-            if day_take in test_take:
+            take = path.split('/')[-1]
+            take = take.split('_cam')[1]
+            if take in path:
                 test_path.append(path)
 
         train_path = []
