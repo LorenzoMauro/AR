@@ -81,7 +81,7 @@ iccv_json = ['Long jump.json', 'Triple jump.json']
 iccv__annotation = breakfast_annotation = 'dataset/iccv.json'
 dataset = 'Ocado'
 breakfast_fps = 15
-add_location = True
+add_location = False
 
 
 #confusion

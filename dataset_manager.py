@@ -73,7 +73,7 @@ class Dataset:
         self.now_weigth, self.next_weigth, self.help_weigth = self.compute_weight(self.collection)
         non_zero_division = False
         while not non_zero_division:
-            self.train_collection, self.test_collection = self.split_dataset_video(self.collection)
+            self.train_collection, self.test_collection = self.split_dataset_take(self.collection)
             non_zero_division = True
             for now in self.train_collection.keys():
                 for next in self.train_collection[now].keys():
@@ -168,6 +168,69 @@ class Dataset:
 
         both_dataset = [x for x in test_path if x in train_path]
         # pp.pprint(both_dataset)
+        # pp.pprint(train_path)
+        test_path.sort()
+        pp.pprint(test_path)
+        # for j in test_path:
+        #     if j in train_path:
+        #         print(test_path)
+                            
+        return train, validation
+
+    def split_dataset_take(self, dataset):
+        validation = {}
+        train = {}
+        random.seed(time.time())
+        take_collection = []
+        for path in self.ordered_collection:
+            take = path.split('/')[-2]
+            day = path.split('/')[-3]
+            day_take = day + '/' + take
+            take_collection.append(day_take)
+        entry_val = int(len(take_collection) * self.validation_fraction)
+        test_take = []
+        while len(test_take) < entry_val + 1:
+            new_test_take = random.choice(list(self.take_collection))
+            test_take.append(new_test_take)
+            if len(test_take) == entry_val + 1:
+                test_with_robot = [x for x in test_take if 'robot' in x]
+                if len(test_with_robot) <2:
+                    test_path = []
+
+        test_path = []
+        for path in self.ordered_collection:
+            take = path.split('/')[-2]
+            day = path.split('/')[-3]
+            day_take = day + '/' + take
+            if day_take in test_take:
+                test_path.append(new_test_take)
+
+        train_path = []
+        for r_now in dataset.keys():
+            for r_next in dataset[r_now].keys():
+                for r_help in dataset[r_now][r_next].keys():
+                    for entry in dataset[r_now][r_next][r_help]:
+                        path = entry['path']
+                        if path in test_path:
+                            if r_now not in validation:
+                                validation[r_now] = {}
+                            if r_next not in validation[r_now]:
+                                validation[r_now][r_next] = {}
+                            if r_help not in validation[r_now][r_next]:
+                                validation[r_now][r_next][r_help] = []
+                            validation[r_now][r_next][r_help].append(entry)
+                        else:
+                            train_path.append(path)
+                            if r_now not in train:
+                                train[r_now] = {}
+                            if r_next not in train[r_now]:
+                                train[r_now][r_next] = {}
+                            if r_help not in train[r_now][r_next]:
+                                train[r_now][r_next][r_help] = []
+                            train[r_now][r_next][r_help].append(entry)
+
+        both_dataset = [x for x in test_path if x in train_path]
+        pp.pprint(both_dataset)
         # pp.pprint(train_path)
         test_path.sort()
         pp.pprint(test_path)
