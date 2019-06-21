@@ -20,4 +20,3 @@ pp.pprint(ordered_collection[keys[0]][0])
 for video in ordered_collection:
     for sec in ordered_collection[video]:
         print(video, sec, ordered_collection[video][sec]['object_label']
-
