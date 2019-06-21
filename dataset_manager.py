@@ -203,7 +203,7 @@ class Dataset:
         for path in self.ordered_collection:
             take = path.split('/')[-1]
             take = take.split('_cam')[1]
-            if take in path:
+            if take in test_take:
                 test_path.append(path)
 
         train_path = []
