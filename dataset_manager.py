@@ -197,7 +197,7 @@ class Dataset:
                 test_with_robot = [x.split('_cam')[-1] for x in test_with_robot]
                 test_with_robot = [x for x in test_with_robot if x in test_take]
                 if len(test_with_robot) <2:
-                    test_path = []
+                    test_take = []
 
         test_path = []
         for path in self.ordered_collection:
