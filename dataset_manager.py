@@ -184,12 +184,12 @@ class Dataset:
         take_collection = []
         for path in self.ordered_collection:
             take = path.split('/')[-1]
-            take = take.split('_cam')[1]
+            take = take.split('_cam')[0]
             take_collection.append(take)
         entry_val = int(len(take_collection) * self.validation_fraction)
         take_with_robot = [x for x in self.ordered_collection if 'robot' in x]
         take_with_robot = [x.split('/')[-1] for x in take_with_robot]
-        take_with_robot = [x.split('_cam')[-1] for x in take_with_robot]
+        take_with_robot = [x.split('_cam')[0] for x in take_with_robot]
         print(take_with_robot)
         test_take = []
         while len(test_take) < entry_val + 1:
@@ -204,7 +204,7 @@ class Dataset:
         test_path = []
         for path in self.ordered_collection:
             take = path.split('/')[-1]
-            take = take.split('_cam')[1]
+            take = take.split('_cam')[0]
             if take in test_take:
                 test_path.append(path)
 
