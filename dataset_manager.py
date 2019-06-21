@@ -183,6 +183,7 @@ class Dataset:
         random.seed(time.time())
         take_collection = []
         for path in self.ordered_collection:
+            print(path.split('/'))
             take = path.split('/')[-2]
             day = path.split('/')[-3]
             day_take = day + '/' + take
@@ -203,7 +204,7 @@ class Dataset:
             day = path.split('/')[-3]
             day_take = day + '/' + take
             if day_take in test_take:
-                test_path.append(new_test_take)
+                test_path.append(path)
 
         train_path = []
         for r_now in dataset.keys():
