@@ -236,8 +236,8 @@ class Dataset:
         pp.pprint(both_dataset)
         # pp.pprint(train_path)
         test_path.sort()
-        pp.pprint(len(validation)
-        pp.pprint(len(train)
+        pp.pprint(len(validation))
+        pp.pprint(len(train))
         # for j in test_path:
         #     if j in train_path:
         #         print(test_path)
