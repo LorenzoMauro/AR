@@ -188,8 +188,8 @@ class Dataset:
             take_collection.append(take)
         entry_val = int(len(take_collection) * self.validation_fraction)
         take_with_robot = [x for x in self.ordered_collection if 'robot' in x]
-        take_with_robot = [x.split('/')[-1] for x in test_with_robot]
-        take_with_robot = [x.split('_cam')[-1] for x in test_with_robot]
+        take_with_robot = [x.split('/')[-1] for x in take_with_robot]
+        take_with_robot = [x.split('_cam')[-1] for x in take_with_robot]
         print(video_with_robot)
         test_take = []
         while len(test_take) < entry_val + 1:
