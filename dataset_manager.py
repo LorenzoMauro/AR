@@ -192,7 +192,10 @@ class Dataset:
             new_test_take = random.choice(list(take_collection))
             test_take.append(new_test_take)
             if len(test_take) == entry_val + 1:
-                test_with_robot = [x for x in self.ordered_collection if 'robot' in x and x.split('/', '_cam'[-2]) in test_take]
+                test_with_robot = [x for x in self.ordered_collection if 'robot' in x]
+                test_with_robot = [x.split('/')[-1] for x in test_with_robot]
+                test_with_robot = [x.split('_cam')[-1] for x in test_with_robot]
+                test_with_robot = [x for x in test_with_robot if x in test_take]
                 if len(test_with_robot) <2:
                     test_path = []
 
