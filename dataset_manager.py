@@ -190,7 +190,7 @@ class Dataset:
         take_with_robot = [x for x in self.ordered_collection if 'robot' in x]
         take_with_robot = [x.split('/')[-1] for x in take_with_robot]
         take_with_robot = [x.split('_cam')[-1] for x in take_with_robot]
-        print(video_with_robot)
+        print(take_with_robot)
         test_take = []
         while len(test_take) < entry_val + 1:
             new_test_take = random.choice(list(take_collection))
