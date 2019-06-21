@@ -235,7 +235,7 @@ class Dataset:
 
         both_dataset = [x for x in test_path if x in train_path]
         pp.pprint(both_dataset)
-        # pp.pprint(train_path)
+        pp.pprint(test_path)
         test_path.sort()
         pp.pprint(len(test_path))
         pp.pprint(len(train_path))
