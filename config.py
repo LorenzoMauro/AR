@@ -5,7 +5,7 @@ allow_growth = True
 
 #[Train]
 c3d_ucf_weights = "sports1m_finetuning_ucf101.model"
-Batch_size = 15
+Batch_size = 10
 frames_per_step = 6
 window_size = 1
 load_previous_weigth = True
@@ -16,7 +16,7 @@ deploy_folder = './Help-System/model/activity_network_model'
 deploy_folder = './Help-System/model/activity_network_model.ckpt'
 tot_steps = 2000000
 processes = 20
-tasks = 40
+tasks = 20
 val_task = 10
 reuse_HSM = True
 reuse_output_collection = False
