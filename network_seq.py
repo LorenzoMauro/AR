@@ -71,6 +71,8 @@ class activity_network:
                 in_lstm_drop_out_prob = Input_manager.in_lstm_drop_out_prob
                 out_lstm_drop_out_prob = Input_manager.out_lstm_drop_out_prob
                 state_lstm_drop_out_prob = Input_manager.state_lstm_drop_out_prob
+
+            with.tf.name_scope('Object_input'):
                 self.obj_input = Input_manager.obj_input[device_j, ...]
                 flat_obj = tf.contrib.layers.flatten(self.obj_input)
 
