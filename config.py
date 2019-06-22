@@ -90,4 +90,4 @@ base_mult = Batch_size*4
 reset_confusion_step = base_mult*int(50000/base_mult)
 update_confusion = base_mult*int(10000/base_mult)
 val_step = base_mult*int(5000/base_mult)
-no_sil_step = 100000
+no_sil_step = 0
