@@ -82,6 +82,7 @@ iccv__annotation = breakfast_annotation = 'dataset/iccv.json'
 dataset = 'Ocado'
 breakfast_fps = 15
 add_location = False
+use_obj = False
 
 
 #confusion

@@ -73,6 +73,7 @@ class activity_network:
                 out_lstm_drop_out_prob = Input_manager.out_lstm_drop_out_prob
                 state_lstm_drop_out_prob = Input_manager.state_lstm_drop_out_prob
                 self.obj_input = Input_manager.obj_input[device_j, ...]
+                flat_obj = tf.contrib.layers.flatten(self.obj_input)
 
             with tf.name_scope("Now_Target"):
                 self.labels = Input_manager.labels[device_j, :, :]
@@ -159,8 +160,10 @@ class activity_network:
 
             with tf.name_scope('insert_obj_for_encoder'):
                 encoder_input = self.out_pL
-                concateneted_encoder_vector = tf.concat([self.out_pL, self.obj_input], -1)
-                encoder_input = tf.layers.dense(concateneted_encoder_vector, config.lstm_units)
+                if config.use_obj:
+                    concateneted_encoder_vector = tf.concat([self.out_pL, self.obj_input], -1)
+                    encoder_input = tf.layers.dense(concateneted_encoder_vector, config.lstm_units)
+                    
 
             def lstm_cell_with_drop_out():
                 lstm_cell = tf.contrib.rnn.LSTMCell(config.lstm_units, initializer=tf.random_uniform_initializer(-0.1, 0.1, seed=2))
@@ -231,8 +234,11 @@ class activity_network:
             with tf.name_scope('Next_classifier'):
                 self.inference_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
                 flat_now = tf.contrib.layers.flatten(self.inference_softmax[:,:-1,:])
-                flat_obj = tf.contrib.layers.flatten(self.obj_input)
-                flat_input = tf.concat([flat_now, flat_obj], 1)
+                if config.use_obj:
+                    flat_input = tf.concat([flat_now, flat_obj], 1)
+                else:
+                    flat_input = flat_now
+
                 next_input = tf.layers.dense(flat_input, config.lstm_units, activation='tanh')
                 next_input = tf.reshape(next_input, [-1, 1, config.lstm_units])
                 next_decoder_cell = lstm_cell_with_drop_out()
@@ -247,13 +253,15 @@ class activity_network:
             with tf.name_scope('Help_input_state'):
                 self.inference_softmax.set_shape([None, (config.seq_len + 1), self.out_vocab_size])
                 flat_now = tf.contrib.layers.flatten(self.inference_softmax[:,:-1,:])
-                flat_obj = tf.contrib.layers.flatten(self.obj_input)
+                if config.use_obj:
+                    c_comp = tf.concat([encoder_state.c, flat_now, self.next_softmax, flat_obj], 1)
+                    h_comp = tf.concat([encoder_state.h, flat_now, self.next_softmax, flat_obj], 1)
+                else:
+                    c_comp = tf.concat([encoder_state.c, flat_now, self.next_softmax], 1)
+                    h_comp = tf.concat([encoder_state.h, flat_now, self.next_softmax], 1)
 
-                c_comp = tf.concat([encoder_state.c, flat_now, self.next_softmax, flat_obj], 1)
                 new_c = tf.layers.dense(c_comp, config.lstm_units, activation='tanh')
                 new_c = tf.layers.dense(new_c, config.lstm_units, activation='tanh')
-
-                h_comp = tf.concat([encoder_state.h, flat_now, self.next_softmax, flat_obj], 1)
                 new_h = tf.layers.dense(h_comp, config.lstm_units, activation='tanh')
                 new_h = tf.layers.dense(new_h, config.lstm_units, activation='tanh')
 
