@@ -275,7 +275,7 @@ class activity_network:
                     out_cd = tf.layers.dense(x, config.pre_class, name="c3d_dense_1", activation='sigmoid')
                     out_cd = tf.nn.dropout(out_cd, drop_out_prob)
                     out_cd_2 = tf.layers.dense(out_cd, config.pre_class, name="c3d_dense_2", activation='sigmoid')
-                    out_cd_2 = tf.nn.dropout(out_cd_2, drop_out_prob)sigmoid
+                    out_cd_2 = tf.nn.dropout(out_cd_2, drop_out_prob)
                     logit = tf.layers.dense(x, self.number_of_classes, name="c3d_dense_3", activation='sigmoid')
                 return logit
 
