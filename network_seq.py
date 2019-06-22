@@ -198,7 +198,7 @@ class activity_network:
                 encoder_state = encoder_state[-1]
    
             def decoder_lstm():
-                output_layer = tf.layers.Dense(self.out_vocab_size, kernel_initializer = tf.truncated_normal_initializer(mean = 0.0, stddev=0.1), activation='tanh')
+                output_layer = tf.layers.Dense(self.out_vocab_size, kernel_initializer = tf.truncated_normal_initializer(mean = 0.0, stddev=0.1), activation='sigmoid')
                 decoder_cell = lstm_cell_with_drop_out()
                 return decoder_cell, output_layer
 
@@ -239,7 +239,7 @@ class activity_network:
                 _, next_out_state = tf.nn.dynamic_rnn(next_decoder_cell, next_input,
                                                                     initial_state=encoder_state,
                                                                     dtype=tf.float32)
-                self.next_logit = tf.layers.dense(next_out_state.c, self.number_of_classes, activation='tanh')
+                self.next_logit = tf.layers.dense(next_out_state.c, self.number_of_classes, activation='sigmoid')
                 self.next_softmax = tf.nn.softmax(self.next_logit, name='softmax_out')
                 self.next_predictions = tf.argmax(input=self.next_softmax, axis=1, name="c3d_prediction")
                 self.next_one_hot_prediction= tf.one_hot(self.next_predictions, depth = self.next_softmax.shape[-1])
@@ -250,12 +250,12 @@ class activity_network:
                 flat_obj = tf.contrib.layers.flatten(self.obj_input)
 
                 c_comp = tf.concat([encoder_state.c, flat_now, self.next_softmax, flat_obj], 1)
-                new_c = tf.layers.dense(c_comp, config.lstm_units, activation='tanh')
-                new_c = tf.layers.dense(new_c, config.lstm_units, activation='tanh')
+                new_c = tf.layers.dense(c_comp, config.lstm_units, activation='sigmoid')
+                new_c = tf.layers.dense(new_c, config.lstm_units, activation='sigmoid')
 
                 h_comp = tf.concat([encoder_state.h, flat_now, self.next_softmax, flat_obj], 1)
-                new_h = tf.layers.dense(h_comp, config.lstm_units, activation='tanh')
-                new_h = tf.layers.dense(new_h, config.lstm_units, activation='tanh')
+                new_h = tf.layers.dense(h_comp, config.lstm_units, activation='sigmoid')
+                new_h = tf.layers.dense(new_h, config.lstm_units, activation='sigmoid')
 
                 help_state = tf.contrib.rnn.LSTMStateTuple(new_c, new_h)
             
@@ -272,11 +272,11 @@ class activity_network:
 
             def c3d_classifier_dense(x):
                 with tf.variable_scope("c3d_classifier_dense", reuse=tf.AUTO_REUSE):
-                    out_cd = tf.layers.dense(x, config.pre_class, name="c3d_dense_1", activation='tanh')
+                    out_cd = tf.layers.dense(x, config.pre_class, name="c3d_dense_1", activation='sigmoid')
                     out_cd = tf.nn.dropout(out_cd, drop_out_prob)
-                    out_cd_2 = tf.layers.dense(out_cd, config.pre_class, name="c3d_dense_2", activation='tanh')
-                    out_cd_2 = tf.nn.dropout(out_cd_2, drop_out_prob)
-                    logit = tf.layers.dense(x, self.number_of_classes, name="c3d_dense_3", activation='tanh')
+                    out_cd_2 = tf.layers.dense(out_cd, config.pre_class, name="c3d_dense_2", activation='sigmoid')
+                    out_cd_2 = tf.nn.dropout(out_cd_2, drop_out_prob)sigmoid
+                    logit = tf.layers.dense(x, self.number_of_classes, name="c3d_dense_3", activation='sigmoid')
                 return logit
 
             with tf.name_scope('c3d_classifier'):

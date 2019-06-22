@@ -57,10 +57,12 @@ class IO_manager:
         pool = mp.Pool(processes=config.processes)
         if not Train:
             augment = False
+
         if Train:
             ready_batch = pool.map(multiprocess_batch, range(0, config.tasks))
         else:
             ready_batch = pool.map(multiprocess_batch, range(0, config.val_task))
+
         if not config.use_prep:
             ready_batch = self.add_pose(ready_batch, self.sess, augment)
         else:
@@ -92,9 +94,9 @@ class IO_manager:
 
         # Selecting correct dataset
         if Train:
-            dataset = self.dataset.train_collection
+            collection_dataset = self.dataset.train_collection
         else:
-            dataset = self.dataset.test_collection
+            collection_dataset = self.dataset.test_collection
         ordered_collection = self.dataset.ordered_collection
 
         d = 0
@@ -103,7 +105,7 @@ class IO_manager:
             video_name_collection = []
             j = 0
             while j < config.Batch_size:
-                entry_list = self.entry_selector(dataset,ordered_collection, config.is_ordered)
+                entry_list = self.entry_selector(collection_dataset,ordered_collection, config.is_ordered)
                 s = 0
                 for entry in entry_list:
                     current_label = entry['now_label']
