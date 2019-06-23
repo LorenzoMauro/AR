@@ -5,7 +5,7 @@ allow_growth = True
 
 #[Train]
 c3d_ucf_weights = "sports1m_finetuning_ucf101.model"
-Batch_size = 10
+Batch_size = 15
 frames_per_step = 6
 window_size = 1
 load_previous_weigth = True
@@ -29,7 +29,7 @@ is_ordered = False
 
 learning_rate_start = 0.0001
 gradient_clipping_norm = 1.0
-plh_dropout = 0.7
+plh_dropout = 0.5
 c3d_dropout = 0.6
 preLstm_dropout = 0.6
 Lstm_dropout = 0.6
@@ -90,4 +90,4 @@ base_mult = Batch_size*4
 reset_confusion_step = base_mult*int(50000/base_mult)
 update_confusion = base_mult*int(10000/base_mult)
 val_step = base_mult*int(5000/base_mult)
-no_sil_step = 0
+no_sil_step = 100000
