@@ -29,6 +29,7 @@ for entry in ordered_collection.keys():
     path.split('/')
     video_name = path[-1]
     video_name.split('_cam')
+    print(video_name)
     take = video_name[0]
     cam = video_name[1]
     cam = cam.split('.')[0]
