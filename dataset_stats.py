@@ -28,7 +28,7 @@ for entry in ordered_collection.keys():
         is_robot = True
     path.split('/')
     video_name = path[-1]
-    video_name.split('_cam')
+    video_name = video_name.split('_cam')
     print(video_name)
     take = video_name[0]
     cam = video_name[1]
