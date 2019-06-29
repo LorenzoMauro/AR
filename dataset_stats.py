@@ -20,9 +20,9 @@ robot_take = 0
 robot_video = 0
 human_assistant_separation = {}
 robot_assistant_separation = {}
-for entry in ordered_collection:
+for entry in ordered_collection.keys():
     is_robot = False
-    path = entry['path']
+    path = entry
     if 'robot' in path:
         is_robot = True
     path.split('/')
