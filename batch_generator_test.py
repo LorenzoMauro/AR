@@ -43,7 +43,7 @@ class IO_manager:
 
     def compute_batch(self, pbar, Devices, Train, augment=True):
         def multiprocess_batch(x):
-            X, Y, c, h, video_name_collection, segment_collection, next_label, help_label, now_weight, next_weight, help_weight= self.batch_generator(pbar, Devices, Train)
+            X, Y, c, h, video_name_collection, segment_collection, next_label, help_label, now_weight, next_weight, help_weight, obj_input= self.batch_generator(pbar, Devices, Train)
             return {'X': X, 'Y': Y, 'c': c, 'h': h,
                     'next_Y': next_label,
                     'help_Y': help_label,
@@ -51,15 +51,23 @@ class IO_manager:
                     'segment_collection': segment_collection,
                     'now_weight': now_weight,
                     'next_weight': next_weight,
-                    'help_weight': help_weight}
+                    'help_weight': help_weight,
+                    'obj_input': obj_input}
 
         pool = mp.Pool(processes=config.processes)
+        if not Train:
+            augment = False
+
         if Train:
             ready_batch = pool.map(multiprocess_batch, range(0, config.tasks))
         else:
             ready_batch = pool.map(multiprocess_batch, range(0, config.val_task))
+
         if not config.use_prep:
             ready_batch = self.add_pose(ready_batch, self.sess, augment)
+        else:
+            ready_batch = self.augment_input(ready_batch, self.sess, augment)
+
         # ready_batch = self.group_batches(ready_batch, Devices, pbar)
         pbar.close()
         pool.close()
@@ -82,12 +90,13 @@ class IO_manager:
         now_weight = np.zeros(shape=(Devices, config.Batch_size, config.seq_len + 1), dtype=float)
         next_weight = np.zeros(shape=(Devices, config.Batch_size), dtype=float)
         help_weight = np.zeros(shape=(Devices, config.Batch_size, 4), dtype=float)
+        obj_input = np.zeros(shape=(Devices, config.Batch_size,config.seq_len, len(self.dataset.word_to_id)), dtype=float)
 
         # Selecting correct dataset
         if Train:
-            dataset = self.dataset.train_collection
+            collection_dataset = self.dataset.train_collection
         else:
-            dataset = self.dataset.test_collection
+            collection_dataset = self.dataset.test_collection
         ordered_collection = self.dataset.ordered_collection
 
         d = 0
@@ -96,7 +105,7 @@ class IO_manager:
             video_name_collection = []
             j = 0
             while j < config.Batch_size:
-                entry_list = self.entry_selector(dataset,ordered_collection, config.is_ordered)
+                entry_list = self.entry_selector(collection_dataset,ordered_collection, config.is_ordered)
                 s = 0
                 for entry in entry_list:
                     current_label = entry['now_label']
@@ -118,6 +127,18 @@ class IO_manager:
                     labels[d, j, s] = current_label
                     now_weight[d, j, s] = self.dataset.now_weigth[current_label]
 
+                    obj_label = entry['obj_label']
+                    for obj in obj_label.keys():
+                        position = self.dataset.word_to_id[obj]
+                        value = obj_label[obj]
+                        obj_input[d, j, s, position] = value
+
+                    if config.add_location:
+                        location_label = entry['location_label']
+                        for loc in location_label.keys():
+                            position = self.dataset.word_to_id[loc]
+                            value = location_label[loc]
+                            obj_input[d, j, s, position] = value
 
                     if s == 0:
                         if path in self.hidden_states_collection:
@@ -154,7 +175,7 @@ class IO_manager:
         # pp.pprint(history)
         pbar.update(1)
         pbar.refresh()
-        return batch, labels, c, h, batch_video_name_collection, batch_segment_collection, next_labels, help_labels, now_weight, next_weight, help_weight
+        return batch, labels, c, h, batch_video_name_collection, batch_segment_collection, next_labels, help_labels, now_weight, next_weight, help_weight, obj_input
 
     def entry_selector(self, dataset,ordered_collection, is_ordered):
         random.seed(time.time())
@@ -343,6 +364,30 @@ class IO_manager:
             if config.show_pic:
                 self.show_input_pic(X_data)
             X[k]['X'] = shrinked_X
+        pbar.refresh()
+        pbar.clear()
+        pbar.close()
+        return X
+
+    def augment_input(self, X, sess, augment=True):
+        shape = (X[0])['X'].shape
+        total = len(X) * shape[0] * shape[1]* shape[2]* shape[2]
+        augment = 'none'
+        if augment:
+            augment = random.choice(['none', 'horizzontal', 'vertical', 'both'])
+        pbar = tqdm(total=total, leave=False, desc='Computing Poses')
+        for k in range(len(X)):
+            X_data = (X[k])['X']
+            shape = X_data.shape
+            for d in range(shape[0]):
+                for i in range(shape[1]):
+                    for j in range(shape[2]):
+                        for z in range(shape[3]):
+                            Frame_Data = X_data[d, i, j, z, :, :, :]
+                            augmented = self.augment_data(Frame_Data, augment)
+                            X_data[d, i, j, z, :, :, :] = augmented
+                            pbar.update(1)
+            X[k]['X'] = X_data
         pbar.refresh()
         pbar.clear()
         pbar.close()

@@ -16,9 +16,10 @@ import config
 from tensorflow.python.client import device_lib
 
 pp = pprint.PrettyPrinter(indent=4)
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['TF_CUDNN_WORKSPACE_LIMIT_IN_MB'] = '0'
 tf_config = tf.ConfigProto(inter_op_parallelism_threads=config.inter_op_parallelism_threads, allow_soft_placement = True)
 tf_config.gpu_options.allow_growth = config.allow_growth
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 def get_available_gpus():
     local_device_protos = device_lib.list_local_devices()
@@ -55,11 +56,14 @@ def train():
             print('new model loaded')
             ckpts = tf.train.latest_checkpoint('./checkpoint')
             vars_in_checkpoint = tf.train.list_variables(ckpts)
-            var_rest = []
-            for el in vars_in_checkpoint:
-                var_rest.append(el[0])
             variables = tf.contrib.slim.get_variables_to_restore()
-            var_list = [v for v in variables if v.name.split(':')[0] in var_rest]
+            ckpt_var_name = []
+            ckpt_var_shape = {}
+            for el in vars_in_checkpoint:
+                ckpt_var_name.append(el[0])
+                ckpt_var_shape[el[0]] = el[1]
+            var_list = [v for v in variables if v.name.split(':')[0] in ckpt_var_name]
+            var_list = [v for v in var_list if list(v.shape) == ckpt_var_shape[v.name.split(':')[0]]]
             loader = tf.train.Saver(var_list=var_list)
             loader.restore(sess, ckpts)
         elif config.load_c3d:
@@ -72,6 +76,10 @@ def train():
         whole_saver.save(sess, config.model_filename, global_step=0)
         pbar_whole = tqdm(total=(config.tot_steps), desc='Step')
         confusion_tool = confusion_tool_class(number_of_classes, IO_tool, sess, Train_Net)
+
+        run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+        run_metadata = tf.RunMetadata()
+        
         while step < config.tot_steps:
             ready_batch = 0
             pbar = tqdm(total=(config.tasks * config.Batch_size * config.seq_len * len(available_gpus) * config.frames_per_step + len(available_gpus)*config.tasks - 1), leave=False, desc='Batch Generation')
@@ -80,7 +88,13 @@ def train():
                 summary, t_op, now_pred, next_pred, c3d_pred, help_pred, c_state, h_state = sess.run([Train_Net.merged, Train_Net.train_op,
                                                                                             Train_Net.predictions_now_conc, Train_Net.predictions_next_conc, Train_Net.predictions_c3d_conc, Train_Net.predictions_help_conc,
                                                                                             Train_Net.c_out_list, Train_Net.h_out_list],
+                                                                                            # options=run_options,
+                                                                                            # run_metadata=run_metadata,
                                                                                             feed_dict={Input_net.input_batch: batch['X'],
+                                                                                                        Input_net.drop_out_prob: config.plh_dropout,
+                                                                                                        Input_net.in_lstm_drop_out_prob: config.plh_dropout,
+                                                                                                        Input_net.out_lstm_drop_out_prob: config.plh_dropout,
+                                                                                                        Input_net.state_lstm_drop_out_prob: config.plh_dropout,
                                                                                                         Input_net.labels: batch['Y'],
                                                                                                         Input_net.help_labels: batch['help_Y'],
                                                                                                         Input_net.c_input: batch['c'],
@@ -88,7 +102,8 @@ def train():
                                                                                                         Input_net.next_labels: batch['next_Y'],
                                                                                                         Train_Net.now_weight: batch['now_weight'],
                                                                                                         Train_Net.next_weight: batch['next_weight'],
-                                                                                                        Train_Net.help_weight: batch['help_weight']})
+                                                                                                        Train_Net.help_weight: batch['help_weight'],
+                                                                                                        Input_net.obj_input: batch['obj_input']})
 
                 # print(batch['Y'][0,0,...], now_pred[0,...])
                 # print(batch['Y'][0,0,...], c3d_pred[0,...])
@@ -124,6 +139,7 @@ def train():
                 # print(np.reshape(help_pred[...,:3], (-1, 1)).shape)
 
                 step = step + config.Batch_size*len(available_gpus)
+                # train_writer.add_run_metadata(run_metadata, 'step%d' % step)
                 train_writer.add_summary(summary, step)
                 pbar_whole.update(config.Batch_size*len(available_gpus))
 
@@ -179,7 +195,8 @@ def train():
                                                                                                                                                                 Input_net.next_labels: batch['next_Y'],
                                                                                                                                                                 Train_Net.now_weight: batch['now_weight'],          
                                                                                                                                                                 Train_Net.next_weight: batch['next_weight'],           
-                                                                                                                                                                Train_Net.help_weight: batch['help_weight']})           
+                                                                                                                                                                Train_Net.help_weight: batch['help_weight'],
+                                                                                                                                                                Input_net.obj_input: batch['obj_input']})           
 
                             for j in range(len(batch['video_name_collection'])):
                                 for y in range(c_state[0].shape[1]):
@@ -219,18 +236,18 @@ def train():
                             pred_help = np.reshape(help_pred[...,:3], (-1, 1))
 
                             data_collection = {}
-                            data_collection['now_train'] = {}
-                            data_collection['now_train']['taget'] = target_now
-                            data_collection['now_train']['y_pred'] = pred_now
-                            data_collection['c3d_train'] = {}
-                            data_collection['c3d_train']['taget'] = target_c3d
-                            data_collection['c3d_train']['y_pred'] = pred_c3d
-                            data_collection['next_train'] = {}
-                            data_collection['next_train']['taget'] = target_next
-                            data_collection['next_train']['y_pred'] = pred_next
-                            data_collection['help_train'] = {}
-                            data_collection['help_train']['taget'] = target_help
-                            data_collection['help_train']['y_pred'] = pred_help
+                            data_collection['now_val'] = {}
+                            data_collection['now_val']['taget'] = target_now
+                            data_collection['now_val']['y_pred'] = pred_now
+                            data_collection['c3d_val'] = {}
+                            data_collection['c3d_val']['taget'] = target_c3d
+                            data_collection['c3d_val']['y_pred'] = pred_c3d
+                            data_collection['next_val'] = {}
+                            data_collection['next_val']['taget'] = target_next
+                            data_collection['next_val']['y_pred'] = pred_next
+                            data_collection['help_val'] = {}
+                            data_collection['help_val']['taget'] = target_help
+                            data_collection['help_val']['y_pred'] = pred_help
                             pbar_val_batch.update(1)
                             confusion_tool.update_confusion(data_collection, val_writer, val_step)
                             val_writer.add_summary(summary, val_step + config.Batch_size*len(available_gpus))

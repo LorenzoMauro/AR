@@ -12,11 +12,32 @@ class Annotation:
         activity_dataset = json.loads(json_data)
         json_data = open(config.kit_help_annotation).read()
         help_dataset = json.loads(json_data)
+        json_data = open(config.kit_obj_annotation).read()
+        self.object_label = json.loads(json_data)
+        json_data = open(config.kit_loc_annotation).read()
+        self.location_label = json.loads(json_data)
         self.dataset, self.frames_label, self.label_to_id, self.id_to_label = self.create_ocado_annotation(activity_dataset, help_dataset)
+
+        self.obj_id_2_label = { 0: 'BG',
+                                1: 'spray_bottle',
+                                2: 'screwdriver',
+                                3: 'torch',
+                                4: 'cloth',
+                                5: 'cutter',
+                                6: 'pliers',
+                                7: 'brush',
+                                8: 'torch_handle',
+                                9: 'guard',
+                                10: 'ladder',
+                                11: 'closed_ladder',
+                                12: 'person',
+                                13: 'table'}
+
         # pp.pprint(self.dataset)
         # pp.pprint(self.frames_label)
         # pp.pprint(self.label_to_id)
         # pp.pprint(self.id_to_label)
+        # pp.pprint(self.object_label.keys())
             
     def create_ocado_annotation(self, activity_dataset, help_dataset):
         label_collection = []
@@ -148,9 +169,21 @@ class Annotation:
                 tot_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
                 frames_label = {}
                 for frame in range(1, tot_frames):
+                    cut_name = path.split('/')[-1]
+                    cut_name = cut_name.split('cam')[0]
+                    obj = {}
+                    if cut_name in self.object_label:
+                        if frame in self.object_label[cut_name]:
+                            obj_list = self.object_label[cut_name][frame]['object_list']
+                            prob_list = self.object_label[cut_name][frame]['scores']
+                            for indx in range(len(obj_list)):
+                                obj[self.obj_id_2_label[obj_list[indx]]] = prob_list[indx]
+                    else:
+                        obj = {}
+                    
                     frame_in_msec = (frame / float(fps)) * 1000
                     label = 'sil'
-                    labels = {'now': label_to_id[label], 'next': label_to_id[label], 'help': label_to_id[label]}
+                    labels = {'now': label_to_id[label], 'next': label_to_id[label], 'help': label_to_id[label], 'obj' : obj}
                     for annotation in activity_dataset[entry]:
                         segment = annotation['milliseconds']
                         if frame_in_msec <= segment[1] and frame_in_msec >= segment[0]:
@@ -173,15 +206,18 @@ class Annotation:
                     while find_next and next_frame < tot_frames:
                         proposed_next_label = frames_label[next_frame]['now']
                         next_frame += + 1
+                        # if proposed_next_label != current_label and proposed_next_label != label_to_id['sil']:
+                        #     if proposed_next_label != label_to_id['giveobj'] and proposed_next_label != label_to_id['requestobj']:
+                        #         next_action = proposed_next_label
+                        #         find_next = False
+                        #     else:
+                        #         next_maybe = proposed_next_label
+                        #     if next_maybe != proposed_next_label:
+                        #         next_action = proposed_next_label
+                        #         find_next = False
                         if proposed_next_label != current_label and proposed_next_label != label_to_id['sil']:
-                            if proposed_next_label != label_to_id['giveobj'] and proposed_next_label != label_to_id['requestobj']:
-                                next_action = proposed_next_label
-                                find_next = False
-                            else:
-                                next_maybe = proposed_next_label
-                            if next_maybe != proposed_next_label:
-                                next_action = proposed_next_label
-                                find_next = False
+                            next_action = proposed_next_label
+                            find_next = False
                     frames_label[frame]['next'] = next_action
                 path = path.replace('\\','/')
                 collection[path] = {}

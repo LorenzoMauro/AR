@@ -47,7 +47,7 @@ class Dataset:
         else:
             self.generate_dataset()
 
-        # pp.pprint(self.word_to_id)
+        pp.pprint(self.word_to_id)
         # pp.pprint(self.id_to_word)
         # pp.pprint(self.id_to_label)
         # pp.pprint(self.id_to_word)
@@ -58,6 +58,9 @@ class Dataset:
         self.label_to_id =  annotation.label_to_id
         self.id_to_label =  annotation.id_to_label
         self.frame_label =  annotation.frames_label
+        self.object_label = annotation.object_label
+        self.obj_id_2_label = annotation.obj_id_2_label
+        self.location_label = annotation.location_label
         self.word_to_id, self.id_to_word = self.create_labels_mappings_network(self.label_to_id)
         self.number_of_classes = len(self.word_to_id)
         self.save(self.label_to_id, 'label_to_id')
@@ -70,7 +73,7 @@ class Dataset:
         self.now_weigth, self.next_weigth, self.help_weigth = self.compute_weight(self.collection)
         non_zero_division = False
         while not non_zero_division:
-            self.train_collection, self.test_collection = self.split_dataset_video(self.collection)
+            self.train_collection, self.test_collection = self.split_dataset_take(self.collection)
             non_zero_division = True
             for now in self.train_collection.keys():
                 for next in self.train_collection[now].keys():
@@ -131,6 +134,8 @@ class Dataset:
         test_path = []
         while len(test_path) < entry_val + 1:
             new_test_video = random.choice(list(self.ordered_collection.keys()))
+            if 'cam0' in new_test_video or new_test_video in test_path:
+                continue
             test_path.append(new_test_video)
             if len(test_path) == entry_val + 1:
                 test_with_robot = [x for x in test_path if 'robot' in x]
@@ -172,6 +177,73 @@ class Dataset:
                             
         return train, validation
 
+    def split_dataset_take(self, dataset):
+        validation = {}
+        train = {}
+        random.seed(time.time())
+        take_collection = []
+        for path in self.ordered_collection:
+            take = path.split('/')[-1]
+            take = take.split('_cam')[0]
+            if take not in take_collection:
+                take_collection.append(take)
+        entry_val = int(len(take_collection) * self.validation_fraction)
+        take_with_robot = [x for x in self.ordered_collection if 'robot' in x]
+        take_with_robot = [x.split('/')[-1] for x in take_with_robot]
+        take_with_robot = [x.split('_cam')[0] for x in take_with_robot]
+        test_take = []
+        while len(test_take) < entry_val + 1:
+            new_test_take = random.choice(list(take_collection))
+            test_take.append(new_test_take)
+            if len(test_take) == entry_val + 1:
+                test_with_robot = [x for x in test_take if x in take_with_robot]
+                if len(test_with_robot) <1:
+                    test_take = []
+
+        test_path = []
+        for path in self.ordered_collection:
+            take = path.split('/')[-1]
+            take = take.split('_cam')[0]
+            if take in test_take:
+                test_path.append(path)
+
+        train_path = []
+        for r_now in dataset.keys():
+            for r_next in dataset[r_now].keys():
+                for r_help in dataset[r_now][r_next].keys():
+                    for entry in dataset[r_now][r_next][r_help]:
+                        path = entry['path']
+                        if path in test_path:
+                            if r_now not in validation:
+                                validation[r_now] = {}
+                            if r_next not in validation[r_now]:
+                                validation[r_now][r_next] = {}
+                            if r_help not in validation[r_now][r_next]:
+                                validation[r_now][r_next][r_help] = []
+                            validation[r_now][r_next][r_help].append(entry)
+                        else:
+                            if path not in train_path:
+                                train_path.append(path)
+                            if r_now not in train:
+                                train[r_now] = {}
+                            if r_next not in train[r_now]:
+                                train[r_now][r_next] = {}
+                            if r_help not in train[r_now][r_next]:
+                                train[r_now][r_next][r_help] = []
+                            train[r_now][r_next][r_help].append(entry)
+
+        both_dataset = [x for x in test_path if x in train_path]
+        pp.pprint(both_dataset)
+        pp.pprint(test_path)
+        test_path.sort()
+        pp.pprint(len(test_path))
+        pp.pprint(len(train_path))
+        # for j in test_path:
+        #     if j in train_path:
+        #         print(test_path)
+                            
+        return train, validation
+
     def create_labels_mappings_network(self, label_to_id):
         word_to_id = {}
         id_to_word = {}
@@ -181,7 +253,7 @@ class Dataset:
         id_to_word[1] = 'go'
         word_to_id['end'] = 2
         id_to_word[2] = 'end'
-        obj_list = {'guard', 'cloth', 'torch', 'spray_bottle', 'table', 'pliers', 'screwdriver', 'brush', 'cutter', 'robot', 'ladder'}
+        obj_list = {'guard', 'cloth', 'torch', 'spray_bottle', 'table', 'pliers', 'screwdriver', 'brush', 'cutter', 'robot', 'ladder','closed_ladder','person'}
         i = 3
         for label in label_to_id.keys():
             label = label.split(' ')
@@ -261,6 +333,9 @@ class Dataset:
                 current_label = self.label_calculator(frame_list, path, 'now')
                 next_label = self.label_calculator(frame_list, path, 'next')
                 help_label = self.label_calculator(frame_list, path, 'help')
+                mask_frame_list =  [max(f-fps, 1) for f in frame_list]
+                obj_label = self.object_return(mask_frame_list, path)
+                location_label = self.location_return(mask_frame_list, path)
                 # if current_label == 0:
                     # continue
                 if len(label_history) == 0:
@@ -306,7 +381,7 @@ class Dataset:
 
                 entry = {'now_label' : current_label, 'next_label' : next_label, 'all_next_label' : couple,
                          'path': path, 'segment':segment, 'history':label_history, 'time_step': step,
-                         'help': help_label, 'step_history': step_history}
+                         'help': help_label, 'step_history': step_history, 'obj_label': obj_label, 'location_label': location_label}
                 if path not in ordered_collection:
                     ordered_collection[path] = {}
                 ordered_collection[path][step] = entry
@@ -386,6 +461,38 @@ class Dataset:
             final_label = 0
             pass
         return final_label
+
+    def object_return(self, frame_list, path):
+        cut_name = path.split('/')[-1]
+        cut_name = cut_name.split('cam')[0]
+        frame = str(int((frame_list[0]+frame_list[-1])/2))
+        out = {}
+        if cut_name in self.object_label:
+            obj_list = self.object_label[cut_name][frame][0]
+            for idx in range(len(obj_list['object_list'])):
+                obj_id = obj_list['object_list'][idx]
+                obj_prob = obj_list['scores'][idx]
+                obj_word = self.obj_id_2_label[obj_id]
+                out[obj_word] = obj_prob
+        return out
+
+    def location_return(self, frame_list, path):
+        cut_name = path.split('/')[-1]
+        cut_name = cut_name.split('cam')[0]
+        frame = str(int((frame_list[0]+frame_list[-1])/2))
+        out = {}
+        if cut_name in self.location_label:
+            location = self.location_label[cut_name][frame]
+            if type(location) is str:
+                if location != 'No person' and location !='No diverter':
+                    if location == "Technician under Diverter":
+                        location = 'under_diverter'
+                    if location == "Technician on the Ladder":
+                        location = 'on_ladder'
+                    if location == "Technician next to Guard":
+                        location = 'at_guard_support'
+                    out[location] = 1.0
+        return out
 
     def save(self, obj, name):
         with open('dataset/' + name + '.pkl', 'wb') as f:

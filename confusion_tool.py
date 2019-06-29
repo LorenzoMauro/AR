@@ -64,8 +64,16 @@ class confusion_tool:
         return cm
 
     def update_plot(self, cm_in, step, tensor_name, log_file):
-        cm = cm_in / cm_in.astype(np.float).sum(axis=1)
-        fig = matplotlib.figure.Figure(figsize=(5.5, 5.5), dpi=200, facecolor='w', edgecolor='k')
+        cm = np.zeros((self.number_of_classes, self.number_of_classes), dtype=np.float)
+        for row in range(self.number_of_classes):
+                sum_row = cm_in[row, :].sum()
+                for col in range(self.number_of_classes):
+                        place_sum = cm_in[row, col]
+                        mean = 0
+                        if place_sum > 0:
+                                mean = float(place_sum)/float(sum_row)
+                        cm[row, col] = mean
+        fig = matplotlib.figure.Figure(figsize=(7, 7), dpi=300, facecolor='w', edgecolor='k')
         ax = fig.add_subplot(1, 1, 1)
         im = ax.imshow(cm, cmap='Oranges')
         
