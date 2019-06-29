@@ -23,9 +23,10 @@ robot_assistant_separation = {}
 for entry in ordered_collection.keys():
     is_robot = False
     path = entry
+    print(path)
     if 'robot' in path:
         is_robot = True
-    path.split('/')
+    # path.split('/')
     video_name = path[-1]
     video_name.split('_cam')
     take = video_name[0]
